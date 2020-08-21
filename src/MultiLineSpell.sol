@@ -17,8 +17,8 @@ pragma solidity >=0.6.7;
 
 abstract contract PauseLike {
     function delay() public view virtual returns (uint256);
-    function plot(address, bytes32, bytes memory, uint256) public virtual;
-    function exec(address, bytes32, bytes memory, uint256) public virtual;
+    function scheduleTransaction(address, bytes32, bytes memory, uint256) public virtual;
+    function executeTransaction(address, bytes32, bytes memory, uint256) public virtual;
 }
 
 contract MultiLineSpell {
@@ -52,13 +52,13 @@ contract MultiLineSpell {
         for (uint256 i = 0; i < ilks.length; i++) {
             bytes memory sig =
                 abi.encodeWithSignature(
-                    "file(address,bytes32,bytes32,uint256)",
+                    "modifyParameters(address,bytes32,bytes32,uint256)",
                     vat,
                     ilks[i],
-                    bytes32("line"),
+                    bytes32("debtCeiling"),
                     lines[i]
             );
-            pause.plot(plan, tag, sig, eta);
+            pause.scheduleTransaction(plan, tag, sig, eta);
         }
     }
 
@@ -68,13 +68,13 @@ contract MultiLineSpell {
         for (uint256 i = 0; i < ilks.length; i++) {
             bytes memory sig =
                 abi.encodeWithSignature(
-                    "file(address,bytes32,bytes32,uint256)",
+                    "modifyParameters(address,bytes32,bytes32,uint256)",
                     vat,
                     ilks[i],
-                    bytes32("line"),
+                    bytes32("debtCeiling"),
                     lines[i]
             );
-            pause.exec(plan, tag, sig, eta);
+            pause.executeTransaction(plan, tag, sig, eta);
         }
 
         done = true;

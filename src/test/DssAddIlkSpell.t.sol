@@ -88,8 +88,8 @@ contract DssAddIlkSpellTest is GebDeployTestBase {
     }
 
     function testFlip() public {
-        this.modifyParameters(address(liquidationEngine), ilk, "lump", 1 ether); // 1 unit of collateral per batch
-        this.modifyParameters(address(liquidationEngine), ilk, "chop", ONE);
+        this.modifyParameters(address(liquidationEngine), ilk, "collateralToSell", 1 ether); // 1 unit of collateral per batch
+        this.modifyParameters(address(liquidationEngine), ilk, "liquidationPenalty", ONE);
         nctJoin.join(address(this), 1 ether);
         cdpEngine.modifyCDPCollateralization(ilk, address(this), address(this), address(this), 1 ether, 200 ether); // Maximun DAI generated
         nctPip.updateResult(uint(300 ether - 1)); // Decrease price in 1 wei

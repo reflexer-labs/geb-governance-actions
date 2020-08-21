@@ -15,10 +15,10 @@
 
 pragma solidity >=0.6.7;
 
- abstract contract PauseLike {
+abstract contract PauseLike {
     function delay() public view virtual returns (uint256);
-    function plot(address, bytes32, bytes memory, uint256) public virtual;
-    function exec(address, bytes32, bytes memory, uint256) public virtual;
+    function scheduleTransaction(address, bytes32, bytes memory, uint256) public virtual;
+    function executeTransaction(address, bytes32, bytes memory, uint256) public virtual;
 }
 
 contract LineSpell {
@@ -39,10 +39,10 @@ contract LineSpell {
         ilk   = _ilk;
         line  = _line;
         sig   = abi.encodeWithSignature(
-                "file(address,bytes32,bytes32,uint256)",
+                "modifyParameters(address,bytes32,bytes32,uint256)",
                 vat,
                 ilk,
-                bytes32("line"),
+                bytes32("debtCeiling"),
                 line
         );
         bytes32 _tag;
@@ -54,13 +54,13 @@ contract LineSpell {
         require(eta == 0, "spell-already-scheduled");
         eta = now + PauseLike(pause).delay();
 
-        pause.plot(plan, tag, sig, eta);
+        pause.scheduleTransaction(plan, tag, sig, eta);
     }
 
     function cast() public {
         require(!done, "spell-already-cast");
 
-        pause.exec(plan, tag, sig, eta);
+        pause.executeTransaction(plan, tag, sig, eta);
 
         done = true;
     }

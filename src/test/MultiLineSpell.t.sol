@@ -98,13 +98,13 @@ contract MultiLineSpellTest is GebDeployTestBase {
         spell.cast();
     }
 
-    function testCast() public {
+    function testMultiLineCast() public {
         ilks  = [ bytes32("GOLD"), bytes32("GELD") ];
         lines = [ 100, 200 ];
 
         spell = new MultiLineSpell(address(pause), address(govActions), address(cdpEngine), ilks, lines);
         elect();
-        spell.schedule(); // failing call
+        spell.schedule();
         hevm.warp(now + wait);
 
         spell.cast();

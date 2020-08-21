@@ -41,8 +41,8 @@ contract LineSpellTest is GebDeployTestBase {
         spell = new LineSpell(address(pause), address(govActions), address(cdpEngine), ilk, line);
 
         bytes memory expectedSig = abi.encodeWithSignature(
-            "file(address,bytes32,bytes32,uint256)",
-            cdpEngine, ilk, bytes32("line"), line
+            "modifyParameters(address,bytes32,bytes32,uint256)",
+            cdpEngine, ilk, bytes32("debtCeiling"), line
         );
         assertEq0(spell.sig(), expectedSig);
 
@@ -60,12 +60,12 @@ contract LineSpellTest is GebDeployTestBase {
     function testCast() public {
         spell = new LineSpell(address(pause), address(govActions), address(cdpEngine), ilk, line);
         elect();
-        spell.schedule(); // failing call
-        // hevm.warp(now + wait);
+        spell.schedule();
+        hevm.warp(now + wait);
 
-        // spell.cast();
-        // (,,, uint256 l,,) = cdpEngine.collateralTypes(ilk);
-        // assertEq(line, l);
+        spell.cast();
+        (,,, uint256 l,,) = cdpEngine.collateralTypes(ilk);
+        assertEq(line, l);
     }
 
     function testFailRepeatedCast() public {

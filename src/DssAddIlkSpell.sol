@@ -43,9 +43,9 @@ contract IlkDeployer {
         ConfigLike(addrs[7]).rely(addrs[1]); // flip.rely(cat);
         ConfigLike(addrs[7]).rely(addrs[4]); // flip.rely(end);
 
-        ConfigLike(addrs[0]).file(ilk_, "line", values[0]); // vat.file(ilk_, "line", line);
-        ConfigLike(addrs[1]).file(ilk_, "lump", values[4]); // cat.file(ilk_, "lump", lump);
-        ConfigLike(addrs[1]).file(ilk_, "chop", values[3]); // cat.file(ilk_, "chop", chop);
+        ConfigLike(addrs[0]).file(ilk_, "debtCeiling", values[0]); // vat.file(ilk_, "line", line);
+        ConfigLike(addrs[1]).file(ilk_, "collateralToSell", values[4]); // cat.file(ilk_, "lump", lump);
+        ConfigLike(addrs[1]).file(ilk_, "liquidationPenalty", values[3]); // cat.file(ilk_, "chop", chop);
         ConfigLike(addrs[2]).file(ilk_, "duty", values[2]); // jug.file(ilk_, "duty", duty);
         ConfigLike(addrs[3]).file(ilk_, "mat", values[1]); // spotter.file(ilk_, "mat", mat);
 
