@@ -60,7 +60,7 @@ contract LineSpellTest is GebDeployTestBase {
     function testCast() public {
         spell = new LineSpell(address(pause), address(govActions), address(cdpEngine), ilk, line);
         elect();
-        spell.schedule();
+        spell.schedule(); // failing call
         // hevm.warp(now + wait);
 
         // spell.cast();

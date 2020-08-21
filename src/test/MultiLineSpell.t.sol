@@ -104,7 +104,7 @@ contract MultiLineSpellTest is GebDeployTestBase {
 
         spell = new MultiLineSpell(address(pause), address(govActions), address(cdpEngine), ilks, lines);
         elect();
-        spell.schedule();
+        spell.schedule(); // failing call
         hevm.warp(now + wait);
 
         spell.cast();
