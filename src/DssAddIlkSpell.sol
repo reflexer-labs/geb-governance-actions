@@ -1,20 +1,20 @@
 pragma solidity >=0.6.7;
 
 abstract contract SpotterLike {
-    function poke(bytes32) public virtual;
+    function updateCollateralPrice(bytes32) public virtual;
 }
 
 abstract contract PauseLike {
-    function delay() public virtual returns (uint);
-    function exec(address, bytes32, bytes memory, uint256) public virtual;
-    function plot(address, bytes32, bytes memory, uint256) public virtual;
+    function delay() public view virtual returns (uint256);
+    function scheduleTransaction(address, bytes32, bytes memory, uint256) public virtual;
+    function executeTransaction(address, bytes32, bytes memory, uint256) public virtual;
 }
 
 abstract contract ConfigLike {
-    function init(bytes32) public virtual;
-    function file(bytes32, bytes32, address) public virtual;
-    function file(bytes32, bytes32, uint) public virtual;
-    function rely(address) public virtual;
+    function initializeCollateralType(bytes32) public virtual;
+    function modifyParameters(bytes32, bytes32, address) public virtual;
+    function modifyParameters(bytes32, bytes32, uint) public virtual;
+    function addAuthorization(address) public virtual;
 }
 
 contract IlkDeployer {
@@ -25,7 +25,7 @@ contract IlkDeployer {
         // addrs[3] = spotter
         // addrs[4] = end
         // addrs[5] = join
-        // addrs[6] = pip
+        // addrs[6] = orcl
         // addrs[7] = flip
         // values[0] = line
         // values[1] = mat
@@ -33,23 +33,24 @@ contract IlkDeployer {
         // values[3] = chop
         // values[4] = lump
 
-        ConfigLike(addrs[3]).file(ilk_, "pip", address(addrs[6])); // vat.file(ilk_, "pip", pip);
+        ConfigLike(addrs[3]).modifyParameters(ilk_, "orcl", address(addrs[6])); // vat.file(ilk_, "pip", pip);
 
-        ConfigLike(addrs[1]).file(ilk_, "flip", addrs[7]); // cat.file(ilk_, "flip", flip);
-        ConfigLike(addrs[0]).init(ilk_); // vat.init(ilk_);
-        ConfigLike(addrs[2]).init(ilk_); // jug.init(ilk_);
+        ConfigLike(addrs[1]).modifyParameters(ilk_, "collateralAuctionHouse", addrs[7]); // cat.file(ilk_, "flip", flip);
+        ConfigLike(addrs[0]).initializeCollateralType(ilk_); // vat.init(ilk_);
+        ConfigLike(addrs[2]).initializeCollateralType(ilk_); // jug.init(ilk_);
 
-        ConfigLike(addrs[0]).rely(addrs[5]); // vat.rely(join);
-        ConfigLike(addrs[7]).rely(addrs[1]); // flip.rely(cat);
-        ConfigLike(addrs[7]).rely(addrs[4]); // flip.rely(end);
+        ConfigLike(addrs[0]).addAuthorization(addrs[5]); // vat.rely(join);
+        ConfigLike(addrs[7]).addAuthorization(addrs[1]); // flip.rely(cat);
+        ConfigLike(addrs[7]).addAuthorization(addrs[4]); // flip.rely(end);
 
-        ConfigLike(addrs[0]).file(ilk_, "debtCeiling", values[0]); // vat.file(ilk_, "line", line);
-        ConfigLike(addrs[1]).file(ilk_, "collateralToSell", values[4]); // cat.file(ilk_, "lump", lump);
-        ConfigLike(addrs[1]).file(ilk_, "liquidationPenalty", values[3]); // cat.file(ilk_, "chop", chop);
-        ConfigLike(addrs[2]).file(ilk_, "duty", values[2]); // jug.file(ilk_, "duty", duty);
-        ConfigLike(addrs[3]).file(ilk_, "mat", values[1]); // spotter.file(ilk_, "mat", mat);
+        ConfigLike(addrs[0]).modifyParameters(ilk_, "debtCeiling", values[0]); // vat.file(ilk_, "line", line);
+        ConfigLike(addrs[1]).modifyParameters(ilk_, "collateralToSell", values[4]); // cat.file(ilk_, "lump", lump);
+        ConfigLike(addrs[1]).modifyParameters(ilk_, "liquidationPenalty", values[3]); // cat.file(ilk_, "chop", chop);
+        ConfigLike(addrs[2]).modifyParameters(ilk_, "stabilityFee", values[2]); // jug.file(ilk_, "duty", duty);
+        ConfigLike(addrs[3]).modifyParameters(ilk_, "safetyCRatio", values[1]); // spotter.file(ilk_, "mat", mat);
+        ConfigLike(addrs[3]).modifyParameters(ilk_, "liquidationCRatio", values[1]); // added, check
 
-        SpotterLike(addrs[3]).poke(ilk_); // spotter.poke(ilk_);
+        SpotterLike(addrs[3]).updateCollateralPrice(ilk_); // spotter.poke(ilk_);
     }
 }
 
@@ -74,12 +75,12 @@ contract DssAddIlkSpell {
     function schedule() external {
         require(eta == 0, "spell-already-scheduled");
         eta = now + PauseLike(pause).delay();
-        PauseLike(pause).plot(action, tag, sig, eta);
+        PauseLike(pause).scheduleTransaction(action, tag, sig, eta);
     }
 
     function cast() public {
         require(!done, "spell-already-cast");
         done = true;
-        PauseLike(pause).exec(action, tag, sig, eta);
+        PauseLike(pause).executeTransaction(action, tag, sig, eta);
     }
 }

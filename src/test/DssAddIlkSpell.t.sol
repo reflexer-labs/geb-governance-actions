@@ -4,6 +4,8 @@ import "ds-test/test.sol";
 
 import "geb-deploy/test/GebDeploy.t.base.sol";
 
+import {DSValue} from "ds-value/value.sol";
+
 import "../DssAddIlkSpell.sol";
 
 import {OracleLike} from "geb/OracleRelayer.sol";
@@ -15,7 +17,7 @@ contract DssAddIlkSpellTest is GebDeployTestBase {
     bytes32 constant ilk = "NCT"; // New Collateral Type
     DSToken     nct;
     BasicCollateralJoin     nctJoin;
-    FixedDiscountCollateralAuctionHouse     nctFlip;
+    EnglishCollateralAuctionHouse     nctFlip;
     DSValue     nctPip;
 
     function setUp() public override {
@@ -27,7 +29,13 @@ contract DssAddIlkSpellTest is GebDeployTestBase {
         nctJoin = new BasicCollateralJoin(address(cdpEngine), ilk, address(nct));
         nctPip = new DSValue();
         nctPip.updateResult(uint(300 ether));
-        nctFlip = fixedDiscountCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(cdpEngine), ilk);
+        nctFlip = englishCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(cdpEngine), ilk);
+
+        
+        nctFlip.modifyParameters("osm", address(nctPip));
+        nctFlip.modifyParameters("oracleRelayer", address(oracleRelayer));
+        nctFlip.modifyParameters("bidDuration", 172800);
+
         nctFlip.addAuthorization(address(pause.proxy()));
         nctFlip.removeAuthorization(address(this));
 
@@ -45,18 +53,19 @@ contract DssAddIlkSpellTest is GebDeployTestBase {
                 address(nctFlip)
             ],
             [
-                10000 * 10 ** 45, // line
-                1500000000 ether, // mat
+                10000 * 10 ** 45, // debtCeiling
+                1500000000 ether, // safetyCRatio
+                // 1500000000 ether, // liquidationCRatio
                 1.05 * 10 ** 27, // tax
-                ONE, // chop
+                ONE, // liquidationPenalty
                 10000 ether // lump
             ]
         );
 
         authority.setRootUser(address(spell), true);
 
-        // spell.schedule(); // failing call
-        // spell.cast();
+        spell.schedule(); 
+        spell.cast();
 
         nct.approve(address(nctJoin), 1 ether);
     }
