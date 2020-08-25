@@ -33,12 +33,12 @@ contract DebtCeilingProposal {
     bool      public executed; // done
 
     constructor(address _pause, address _target, address _cdpEngine, bytes32 _collateralType, uint256 _debtCeiling) public {
-        pause = PauseLike(_pause);
-        target  = _target;
-        cdpEngine   = _cdpEngine;
-        collateralType   = _collateralType;
-        debtCeiling  = _debtCeiling;
-        signature   = abi.encodeWithSignature(
+        pause          = PauseLike(_pause);
+        target         = _target;
+        cdpEngine      = _cdpEngine;
+        collateralType = _collateralType;
+        debtCeiling    = _debtCeiling;
+        signature      = abi.encodeWithSignature(
                 "modifyParameters(address,bytes32,bytes32,uint256)",
                 _cdpEngine,
                 _collateralType,

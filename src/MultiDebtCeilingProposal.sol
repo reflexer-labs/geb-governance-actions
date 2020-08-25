@@ -21,62 +21,62 @@ abstract contract PauseLike {
     function executeTransaction(address, bytes32, bytes memory, uint256) public virtual;
 }
 
-contract MultiLineSpell {
+contract MultiDebtCeilingProposal {
     PauseLike public pause;
-    address   public plan;
-    bytes32   public tag;
-    uint256   public eta;
-    address   public vat;
-    bytes32[] public ilks;
-    uint256[] public lines;
-    bool      public done;
+    address   public target;
+    bytes32   public codeHash;
+    uint256   public earliestExecutionTime;
+    address   public cdpEngine;
+    bytes32[] public collateralTypes;
+    uint256[] public debtCeilings;
+    bool      public executed;
 
-    constructor(address _pause, address _plan, address _vat, bytes32[] memory _ilks, uint256[] memory _lines) public {
-        require(_ilks.length == _lines.length, "mismatched lengths of ilks, lines");
-        require(_ilks.length > 0, "no ilks");
+    constructor(address _pause, address _target, address _cdpEngine, bytes32[] memory _collateralTypes, uint256[] memory _debtCeilings) public {
+        require(_collateralTypes.length == _debtCeilings.length, "mismatched lengths of collateralTypes, debtCeilings");
+        require(_collateralTypes.length > 0, "no collateral types");
 
         pause = PauseLike(_pause);
-        plan  = _plan;
-        vat   = _vat;
-        ilks  = _ilks;
-        lines = _lines;
-        bytes32 _tag;
-        assembly { _tag := extcodehash(_plan) }
-        tag = _tag;
+        target  = _target;
+        cdpEngine   = _cdpEngine;
+        collateralTypes  = _collateralTypes;
+        debtCeilings = _debtCeilings;
+        bytes32 _codeHash;
+        assembly { _codeHash := extcodehash(_target) }
+        codeHash = _codeHash;
     }
 
-    function schedule() public {
-        require(eta == 0, "spell-already-scheduled");
-        eta = now + PauseLike(pause).delay();
+    function scheduleProposal() public {
+        require(earliestExecutionTime == 0, "proposal-already-scheduled");
+        earliestExecutionTime = now + PauseLike(pause).delay();
 
-        for (uint256 i = 0; i < ilks.length; i++) {
-            bytes memory sig =
+        for (uint256 i = 0; i < collateralTypes.length; i++) {
+            bytes memory signature =
                 abi.encodeWithSignature(
                     "modifyParameters(address,bytes32,bytes32,uint256)",
-                    vat,
-                    ilks[i],
+                    cdpEngine,
+                    collateralTypes[i],
                     bytes32("debtCeiling"),
-                    lines[i]
+                    debtCeilings[i]
             );
-            pause.scheduleTransaction(plan, tag, sig, eta);
+            pause.scheduleTransaction(target, codeHash, signature, earliestExecutionTime);
         }
     }
 
-    function cast() public {
-        require(!done, "spell-already-cast");
+    function executeProposal() public {
+        require(!executed, "proposal-already-executed");
 
-        for (uint256 i = 0; i < ilks.length; i++) {
-            bytes memory sig =
+        for (uint256 i = 0; i < collateralTypes.length; i++) {
+            bytes memory signature =
                 abi.encodeWithSignature(
                     "modifyParameters(address,bytes32,bytes32,uint256)",
-                    vat,
-                    ilks[i],
+                    cdpEngine,
+                    collateralTypes[i],
                     bytes32("debtCeiling"),
-                    lines[i]
+                    debtCeilings[i]
             );
-            pause.executeTransaction(plan, tag, sig, eta);
+            pause.executeTransaction(target, codeHash, signature, earliestExecutionTime);
         }
 
-        done = true;
+        executed = true;
     }
 }

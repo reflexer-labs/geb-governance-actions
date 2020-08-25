@@ -76,9 +76,5 @@ contract DebtCeilingProposalTest is GebDeployTestBase {
 
         proposal.executeProposal();
         proposal.executeProposal();
-
-        // no effect
-        (,,, uint256 l,,) = cdpEngine.collateralTypes(collateralType);
-        assertEq(debtCeiling, l);
     }
 }
