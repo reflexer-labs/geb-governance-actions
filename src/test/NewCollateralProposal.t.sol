@@ -11,36 +11,36 @@ import "../NewCollateralProposal.sol";
 import {OracleLike} from "geb/OracleRelayer.sol";
 import {BasicCollateralJoin} from "geb/BasicTokenAdapters.sol";
 
-contract DssAddIlkSpellTest is GebDeployTestBase {
-    DssAddIlkSpell spell;
+contract NewCollateralProposalTest is GebDeployTestBase {
+    NewCollateralProposal proposal;
 
-    bytes32 constant ilk = "NCT"; // New Collateral Type
-    DSToken     nct;
-    BasicCollateralJoin     nctJoin;
-    EnglishCollateralAuctionHouse     nctFlip;
-    DSValue     nctPip;
+    bytes32 constant collateralType = "NCT";
+    DSToken nctToken;
+    BasicCollateralJoin nctBasicCollateralJoin;
+    EnglishCollateralAuctionHouse nctBasicCollateralAuctionHouse;
+    DSValue nctOrcl;
 
     function setUp() public override {
         super.setUp();
         deployStable("");
 
-        nct = new DSToken(ilk);
-        nct.mint(1 ether);
-        nctJoin = new BasicCollateralJoin(address(cdpEngine), ilk, address(nct));
-        nctPip = new DSValue();
-        nctPip.updateResult(uint(300 ether));
-        nctFlip = englishCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(cdpEngine), ilk);
+        nctToken = new DSToken(collateralType);
+        nctToken.mint(1 ether);
+        nctBasicCollateralJoin = new BasicCollateralJoin(address(cdpEngine), collateralType, address(nctToken));
+        nctOrcl = new DSValue();
+        nctOrcl.updateResult(uint(300 ether));
+        nctBasicCollateralAuctionHouse = englishCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(cdpEngine), collateralType);
 
         
-        nctFlip.modifyParameters("osm", address(nctPip));
-        nctFlip.modifyParameters("oracleRelayer", address(oracleRelayer));
-        nctFlip.modifyParameters("bidDuration", 172800);
+        nctBasicCollateralAuctionHouse.modifyParameters("osm", address(nctOrcl));
+        nctBasicCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
+        nctBasicCollateralAuctionHouse.modifyParameters("bidDuration", pause.delay());
 
-        nctFlip.addAuthorization(address(pause.proxy()));
-        nctFlip.removeAuthorization(address(this));
+        nctBasicCollateralAuctionHouse.addAuthorization(address(pause.proxy()));
+        nctBasicCollateralAuctionHouse.removeAuthorization(address(this));
 
-        spell = new DssAddIlkSpell(
-            ilk,
+        proposal = new NewCollateralProposal(
+            collateralType,
             address(pause),
             [
                 address(cdpEngine),
@@ -48,9 +48,9 @@ contract DssAddIlkSpellTest is GebDeployTestBase {
                 address(taxCollector),
                 address(oracleRelayer),
                 address(globalSettlement),
-                address(nctJoin),
-                address(nctPip),
-                address(nctFlip)
+                address(nctBasicCollateralJoin),
+                address(nctOrcl),
+                address(nctBasicCollateralAuctionHouse)
             ],
             [
                 10000 * 10 ** 45, // debtCeiling
@@ -62,34 +62,34 @@ contract DssAddIlkSpellTest is GebDeployTestBase {
             ]
         );
 
-        authority.setRootUser(address(spell), true);
+        authority.setRootUser(address(proposal), true);
 
-        spell.schedule(); 
-        spell.cast();
+        proposal.scheduleProposal(); 
+        proposal.executeProposal();
 
-        nct.approve(address(nctJoin), 1 ether);
+        nctToken.approve(address(nctBasicCollateralJoin), 1 ether);
     }
 
     function testVariables() public {
-        (,,,uint line,,) = cdpEngine.collateralTypes(ilk);
+        (,,,uint line,,) = cdpEngine.collateralTypes(collateralType);
         assertEq(line, uint(10000 * 10 ** 45));
-        (OracleLike pip, uint mat,) = oracleRelayer.collateralTypes(ilk);
-        assertEq(address(pip), address(nctPip));
+        (OracleLike pip, uint mat,) = oracleRelayer.collateralTypes(collateralType);
+        assertEq(address(pip), address(nctOrcl));
         assertEq(mat, uint(1500000000 ether));
-        (uint tax,) = taxCollector.collateralTypes(ilk);
+        (uint tax,) = taxCollector.collateralTypes(collateralType);
         assertEq(tax, uint(1.05 * 10 ** 27));
-        (address flip, uint chop, uint lump) = liquidationEngine.collateralTypes(ilk);
-        assertEq(flip, address(nctFlip));
+        (address flip, uint chop, uint lump) = liquidationEngine.collateralTypes(collateralType);
+        assertEq(flip, address(nctBasicCollateralAuctionHouse));
         assertEq(chop, ONE);
         assertEq(lump, uint(10000 ether));
-        assertEq(cdpEngine.authorizedAccounts(address(nctJoin)), 1);
+        assertEq(cdpEngine.authorizedAccounts(address(nctBasicCollateralJoin)), 1);
     }
 
     function testFrob() public {
         assertEq(coin.balanceOf(address(this)), 0);
-        nctJoin.join(address(this), 1 ether);
+        nctBasicCollateralJoin.join(address(this), 1 ether);
 
-        cdpEngine.modifyCDPCollateralization(ilk, address(this), address(this), address(this), 1 ether, 100 ether);
+        cdpEngine.modifyCDPCollateralization(collateralType, address(this), address(this), address(this), 1 ether, 100 ether);
 
         cdpEngine.approveCDPModification(address(coinJoin));
         coinJoin.exit(address(this), 100 ether);
@@ -97,15 +97,15 @@ contract DssAddIlkSpellTest is GebDeployTestBase {
     }
 
     function testFlip() public {
-        this.modifyParameters(address(liquidationEngine), ilk, "collateralToSell", 1 ether); // 1 unit of collateral per batch
-        this.modifyParameters(address(liquidationEngine), ilk, "liquidationPenalty", ONE);
-        nctJoin.join(address(this), 1 ether);
-        cdpEngine.modifyCDPCollateralization(ilk, address(this), address(this), address(this), 1 ether, 200 ether); // Maximun DAI generated
-        nctPip.updateResult(uint(300 ether - 1)); // Decrease price in 1 wei
-        oracleRelayer.updateCollateralPrice(ilk);
-        assertEq(cdpEngine.tokenCollateral(ilk, address(nctFlip)), 0);
-        uint batchId = liquidationEngine.liquidateCDP(ilk, address(this));
-        assertEq(cdpEngine.tokenCollateral(ilk, address(nctFlip)), 1 ether);
+        this.modifyParameters(address(liquidationEngine), collateralType, "collateralToSell", 1 ether); // 1 unit of collateral per batch
+        this.modifyParameters(address(liquidationEngine), collateralType, "liquidationPenalty", ONE);
+        nctBasicCollateralJoin.join(address(this), 1 ether);
+        cdpEngine.modifyCDPCollateralization(collateralType, address(this), address(this), address(this), 1 ether, 200 ether); // Maximun DAI generated
+        nctOrcl.updateResult(uint(300 ether - 1)); // Decrease price in 1 wei
+        oracleRelayer.updateCollateralPrice(collateralType);
+        assertEq(cdpEngine.tokenCollateral(collateralType, address(nctBasicCollateralAuctionHouse)), 0);
+        uint batchId = liquidationEngine.liquidateCDP(collateralType, address(this));
+        assertEq(cdpEngine.tokenCollateral(collateralType, address(nctBasicCollateralAuctionHouse)), 1 ether);
 
         address(user1).transfer(10 ether);
         user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
@@ -115,19 +115,19 @@ contract DssAddIlkSpellTest is GebDeployTestBase {
         user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
         user2.doModifyCDPCollateralization(address(cdpEngine), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
 
-        user1.doCDPApprove(address(cdpEngine), address(nctFlip));
-        user2.doCDPApprove(address(cdpEngine), address(nctFlip));
+        user1.doCDPApprove(address(cdpEngine), address(nctBasicCollateralAuctionHouse));
+        user2.doCDPApprove(address(cdpEngine), address(nctBasicCollateralAuctionHouse));
 
-        user1.doIncreaseBidSize(address(nctFlip), batchId, 1 ether, rad(100 ether));
-        user2.doIncreaseBidSize(address(nctFlip), batchId, 1 ether, rad(140 ether));
-        user1.doIncreaseBidSize(address(nctFlip), batchId, 1 ether, rad(180 ether));
-        user2.doIncreaseBidSize(address(nctFlip), batchId, 1 ether, rad(200 ether));
+        user1.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, 1 ether, rad(100 ether));
+        user2.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, 1 ether, rad(140 ether));
+        user1.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, 1 ether, rad(180 ether));
+        user2.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, 1 ether, rad(200 ether));
 
-        user1.doDecreaseSoldAmount(address(nctFlip), batchId, 0.8 ether, rad(200 ether));
-        user2.doDecreaseSoldAmount(address(nctFlip), batchId, 0.7 ether, rad(200 ether));
-        hevm.warp(nctFlip.totalAuctionLength() - 1);
-        user1.doDecreaseSoldAmount(address(nctFlip), batchId, 0.6 ether, rad(200 ether));
-        hevm.warp(now + nctFlip.totalAuctionLength() + 1);
-        user1.doSettleAuction(address(nctFlip), batchId);
+        user1.doDecreaseSoldAmount(address(nctBasicCollateralAuctionHouse), batchId, 0.8 ether, rad(200 ether));
+        user2.doDecreaseSoldAmount(address(nctBasicCollateralAuctionHouse), batchId, 0.7 ether, rad(200 ether));
+        hevm.warp(nctBasicCollateralAuctionHouse.totalAuctionLength() - 1);
+        user1.doDecreaseSoldAmount(address(nctBasicCollateralAuctionHouse), batchId, 0.6 ether, rad(200 ether));
+        hevm.warp(now + nctBasicCollateralAuctionHouse.totalAuctionLength() + 1);
+        user1.doSettleAuction(address(nctBasicCollateralAuctionHouse), batchId);
     }
 }

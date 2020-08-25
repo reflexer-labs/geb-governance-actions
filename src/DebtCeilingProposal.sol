@@ -23,14 +23,14 @@ abstract contract PauseLike {
 
 contract DebtCeilingProposal {
     PauseLike public pause;
-    address   public target; // plan
-    bytes32   public codeHash; // tag
-    uint256   public earliestExecutionTime; // eta
-    bytes     public signature; // sig
-    address   public cdpEngine; // vay
-    bytes32   public collateralType; // ilk
-    uint256   public debtCeiling; // line
-    bool      public executed; // done
+    address   public target;
+    bytes32   public codeHash;
+    uint256   public earliestExecutionTime;
+    bytes     public signature;
+    address   public cdpEngine;
+    bytes32   public collateralType;
+    uint256   public debtCeiling;
+    bool      public executed;
 
     constructor(address _pause, address _target, address _cdpEngine, bytes32 _collateralType, uint256 _debtCeiling) public {
         pause          = PauseLike(_pause);
