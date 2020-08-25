@@ -37,8 +37,8 @@ contract CollateralDeployer {
         ConfigLike(addrs[3]).modifyParameters(_collateralType, "orcl", address(addrs[6])); // cdpEngine.modifyParameters(...);
 
         ConfigLike(addrs[1]).modifyParameters(_collateralType, "collateralAuctionHouse", addrs[7]); // liquidationEngine.modifyParameters(...);
-        ConfigLike(addrs[0]).initializeCollateralType(_collateralType); // cdpEngine.initializeCollateralType(ilk_);
-        ConfigLike(addrs[2]).initializeCollateralType(_collateralType); // taxCollector.initializeCollateralType(ilk_);
+        ConfigLike(addrs[0]).initializeCollateralType(_collateralType); // cdpEngine.initializeCollateralType(collateralType);
+        ConfigLike(addrs[2]).initializeCollateralType(_collateralType); // taxCollector.initializeCollateralType(collateralType);
 
         ConfigLike(addrs[0]).addAuthorization(addrs[5]); // cdpEngine.addAuthorization(join);
         ConfigLike(addrs[7]).addAuthorization(addrs[1]); // collateralAuctionHouse.addAuthorization(liquidationEngine);
