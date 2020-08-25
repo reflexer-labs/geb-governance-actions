@@ -58,7 +58,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         assertTrue(!proposal.executed());
     }
 
-    function testFailCastEmptyIlks() public {
+    function testFailProposalEmptyCollateralTypes() public {
         debtCeilings = [ 1 ];
         proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
         setUpAccess();
@@ -68,7 +68,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
     }
 
-    function testFailCastEmptyLines() public {
+    function testFailProposalEmptyDebtCeilings() public {
         _collateralTypes = [ bytes32("GOLD") ];
         proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
         setUpAccess();
@@ -78,7 +78,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
     }
 
-    function testFailCastBothEmpty() public {
+    function testFailProposalBothEmpty() public {
         proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
         setUpAccess();
         proposal.scheduleProposal();
@@ -87,7 +87,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
     }
 
-    function testFailCastMismatchedLengths() public {
+    function testFailProposalMismatchedLengths() public {
         _collateralTypes = new bytes32[](1);
         debtCeilings = new uint256[](2);
         proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
@@ -98,7 +98,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
     }
 
-    function testMultiLineCast() public {
+    function testMultiDebtCeilingProposal() public {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
         debtCeilings = [ 100, 200 ];
 
@@ -115,7 +115,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         }
     }
 
-    function testFailRepeatedCast() public {
+    function testFailRepeatedProposalExecution() public {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
         debtCeilings = [ 100, 200 ];
 
