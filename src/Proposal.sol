@@ -32,8 +32,8 @@ contract Proposal is DSExec, DSNote {
         data = data_;
     }
     // Only marked 'done' if CALL succeeds (not exceptional condition).
-    function cast() public note {
-        require(!executed, "ds-spell-already-cast");
+    function executeProposal() public note {
+        require(!executed, "proposal-already-executed");
         exec(target, data, value);
         executed = true;
     }

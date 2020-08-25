@@ -21,48 +21,48 @@ abstract contract PauseLike {
     function executeTransaction(address, bytes32, bytes memory, uint256) public virtual;
 }
 
-contract LineSpell {
+contract DebtCeilingProposal {
     PauseLike public pause;
-    address   public plan;
-    bytes32   public tag;
-    uint256   public eta;
-    bytes     public sig;
-    address   public vat;
-    bytes32   public ilk;
-    uint256   public line;
-    bool      public done;
+    address   public target; // plan
+    bytes32   public codeHash; // tag
+    uint256   public earliestExecutionTime; // eta
+    bytes     public signature; // sig
+    address   public cdpEngine; // vay
+    bytes32   public collateralType; // ilk
+    uint256   public debtCeiling; // line
+    bool      public executed; // done
 
-    constructor(address _pause, address _plan, address _vat, bytes32 _ilk, uint256 _line) public {
+    constructor(address _pause, address _target, address _cdpEngine, bytes32 _collateralType, uint256 _debtCeiling) public {
         pause = PauseLike(_pause);
-        plan  = _plan;
-        vat   = _vat;
-        ilk   = _ilk;
-        line  = _line;
-        sig   = abi.encodeWithSignature(
+        target  = _target;
+        cdpEngine   = _cdpEngine;
+        collateralType   = _collateralType;
+        debtCeiling  = _debtCeiling;
+        signature   = abi.encodeWithSignature(
                 "modifyParameters(address,bytes32,bytes32,uint256)",
-                vat,
-                ilk,
+                _cdpEngine,
+                _collateralType,
                 bytes32("debtCeiling"),
-                line
+                _debtCeiling
         );
-        bytes32 _tag;
-        assembly { _tag := extcodehash(_plan) }
-        tag = _tag;
+        bytes32 _codeHash;
+        assembly { _codeHash := extcodehash(_target) }
+        codeHash = _codeHash;
     }
 
-    function schedule() public {
-        require(eta == 0, "spell-already-scheduled");
-        eta = now + PauseLike(pause).delay();
+    function scheduleProposal() public { // schedule
+        require(earliestExecutionTime == 0, "proposal-already-scheduled");
+        earliestExecutionTime = now + PauseLike(pause).delay();
 
-        pause.scheduleTransaction(plan, tag, sig, eta);
+        pause.scheduleTransaction(target, codeHash, signature, earliestExecutionTime);
     }
 
-    function cast() public {
-        require(!done, "spell-already-cast");
+    function executeProposal() public { // exec
+        require(!executed, "proposal-already-executed");
 
-        pause.executeTransaction(plan, tag, sig, eta);
+        pause.executeTransaction(target, codeHash, signature, earliestExecutionTime);
 
-        done = true;
+        executed = true;
     }
 }
 
