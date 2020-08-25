@@ -18,7 +18,7 @@ pragma solidity >=0.6.7;
 import "ds-test/test.sol";
 import "geb-deploy/test/GebDeploy.t.base.sol";
 
-import "../LineSpell.sol";
+import "../DebtCeilingProposal.sol";
 
 contract LineSpellTest is GebDeployTestBase {
     LineSpell spell;

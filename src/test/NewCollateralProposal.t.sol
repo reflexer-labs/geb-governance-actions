@@ -6,7 +6,7 @@ import "geb-deploy/test/GebDeploy.t.base.sol";
 
 import {DSValue} from "ds-value/value.sol";
 
-import "../DssAddIlkSpell.sol";
+import "../NewCollateralProposal.sol";
 
 import {OracleLike} from "geb/OracleRelayer.sol";
 import {BasicCollateralJoin} from "geb/BasicTokenAdapters.sol";

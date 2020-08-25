@@ -20,27 +20,27 @@ pragma solidity >=0.6.7;
 import "ds-exec/exec.sol";
 import "ds-note/note.sol";
 
-contract DSSpell is DSExec, DSNote {
-    address public whom;
-    uint256 public mana;
+contract Proposal is DSExec, DSNote {
+    address public target;
+    uint256 public value;
     bytes   public data;
-    bool    public done;
+    bool    public executed;
 
-    constructor(address whom_, uint256 mana_, bytes memory data_) public {
-        whom = whom_;
-        mana = mana_;
+    constructor(address target_, uint256 value_, bytes memory data_) public {
+        target = target_;
+        value = value_;
         data = data_;
     }
     // Only marked 'done' if CALL succeeds (not exceptional condition).
     function cast() public note {
-        require(!done, "ds-spell-already-cast");
-        exec(whom, data, mana);
-        done = true;
+        require(!executed, "ds-spell-already-cast");
+        exec(target, data, value);
+        executed = true;
     }
 }
 
-contract DSSpellBook {
-    function make(address whom, uint256 mana, bytes memory data) public returns (DSSpell) {
-        return new DSSpell(whom, mana, data);
+contract ProposalFactory {
+    function newProposal(address target, uint256 value, bytes memory data) public returns (Proposal) {
+        return new Proposal(target, value, data);
     }
 }

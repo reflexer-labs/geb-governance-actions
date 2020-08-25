@@ -18,7 +18,7 @@ pragma solidity >=0.6.7;
 import "ds-test/test.sol";
 import "geb-deploy/test/GebDeploy.t.base.sol";
 
-import "../MultiLineSpell.sol";
+import "../MultiDebtCeilingProposal.sol";
 
 contract MultiLineSpellTest is GebDeployTestBase {
     MultiLineSpell spell;
