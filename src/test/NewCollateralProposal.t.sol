@@ -55,10 +55,10 @@ contract NewCollateralProposalTest is GebDeployTestBase {
             [
                 10000 * 10 ** 45, // debtCeiling
                 1500000000 ether, // safetyCRatio
-                // 1500000000 ether, // liquidationCRatio
-                1.05 * 10 ** 27, // tax
+                1500000000 ether, // liquidationCRatio
+                1.05 * 10 ** 27, // stabilityFee
                 ONE, // liquidationPenalty
-                10000 ether // lump
+                10000 ether // collateralToSell
             ]
         );
 
@@ -71,21 +71,22 @@ contract NewCollateralProposalTest is GebDeployTestBase {
     }
 
     function testVariables() public {
-        (,,,uint line,,) = cdpEngine.collateralTypes(collateralType);
-        assertEq(line, uint(10000 * 10 ** 45));
-        (OracleLike pip, uint mat,) = oracleRelayer.collateralTypes(collateralType);
-        assertEq(address(pip), address(nctOrcl));
-        assertEq(mat, uint(1500000000 ether));
+        (,,,uint collType,,) = cdpEngine.collateralTypes(collateralType);
+        assertEq(collType, uint(10000 * 10 ** 45));
+        (OracleLike orcl, uint safetyCRatio, uint liquidationCRatio) = oracleRelayer.collateralTypes(collateralType);
+        assertEq(address(orcl), address(nctOrcl));
+        assertEq(safetyCRatio, uint(1500000000 ether));
+        assertEq(liquidationCRatio, uint(1500000000 ether));
         (uint tax,) = taxCollector.collateralTypes(collateralType);
         assertEq(tax, uint(1.05 * 10 ** 27));
-        (address flip, uint chop, uint lump) = liquidationEngine.collateralTypes(collateralType);
-        assertEq(flip, address(nctBasicCollateralAuctionHouse));
-        assertEq(chop, ONE);
-        assertEq(lump, uint(10000 ether));
+        (address auction, uint liquidationPenalty, uint collateralToSell) = liquidationEngine.collateralTypes(collateralType);
+        assertEq(auction, address(nctBasicCollateralAuctionHouse));
+        assertEq(liquidationPenalty, ONE);
+        assertEq(collateralToSell, uint(10000 ether));
         assertEq(cdpEngine.authorizedAccounts(address(nctBasicCollateralJoin)), 1);
     }
 
-    function testFrob() public {
+    function testModifyCDPCollateralization() public {
         assertEq(coin.balanceOf(address(this)), 0);
         nctBasicCollateralJoin.join(address(this), 1 ether);
 
@@ -96,11 +97,11 @@ contract NewCollateralProposalTest is GebDeployTestBase {
         assertEq(coin.balanceOf(address(this)), 100 ether);
     }
 
-    function testFlip() public {
+    function testAuction() public {
         this.modifyParameters(address(liquidationEngine), collateralType, "collateralToSell", 1 ether); // 1 unit of collateral per batch
         this.modifyParameters(address(liquidationEngine), collateralType, "liquidationPenalty", ONE);
         nctBasicCollateralJoin.join(address(this), 1 ether);
-        cdpEngine.modifyCDPCollateralization(collateralType, address(this), address(this), address(this), 1 ether, 200 ether); // Maximun DAI generated
+        cdpEngine.modifyCDPCollateralization(collateralType, address(this), address(this), address(this), 1 ether, 200 ether); // Maximun RAI generated
         nctOrcl.updateResult(uint(300 ether - 1)); // Decrease price in 1 wei
         oracleRelayer.updateCollateralPrice(collateralType);
         assertEq(cdpEngine.tokenCollateral(collateralType, address(nctBasicCollateralAuctionHouse)), 0);

@@ -29,7 +29,7 @@ contract CollateralDeployer {
         // addrs[7] = collateralAuctionHouse
         // values[0] = debtCeiling
         // values[1] = safetyCRatio
-        // values[2] = safetyCRatio
+        // values[2] = liquidationCRatio
         // values[3] = stabilityFee
         // values[4] = liquidationPenalty
         // values[5] = collateralToSell
@@ -64,10 +64,10 @@ contract NewCollateralProposal {
     uint256   public earliestExecutionTime;
     bytes     public signature;
 
-    constructor(bytes32 collateralType_, address pause_, address[8] memory addrs, uint[5] memory values) public {
+    constructor(bytes32 collateralType_, address pause_, address[8] memory addrs, uint[6] memory values) public {
         pause = pause_;
         address deployer = address(new CollateralDeployer());
-        signature = abi.encodeWithSignature("deploy(bytes32,address[8],uint256[5])", collateralType_, addrs, values);
+        signature = abi.encodeWithSignature("deploy(bytes32,address[8],uint256[6])", collateralType_, addrs, values);
         bytes32 _codeHash; assembly { _codeHash := extcodehash(deployer) }
         collateralDeployer = deployer;
         codeHash = _codeHash;
