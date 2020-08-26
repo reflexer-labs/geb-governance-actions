@@ -20,111 +20,111 @@ import "geb-deploy/test/GebDeploy.t.base.sol";
 
 import "../MultiDebtCeilingProposal.sol";
 
-contract MultiLineSpellTest is GebDeployTestBase {
-    MultiLineSpell spell;
-    bytes32[] ilks;
-    uint256[] lines;
-    uint256 wait;
+contract MultiDebtCeilingProposalTest is GebDeployTestBase {
+    MultiDebtCeilingProposal proposal;
+    bytes32[] _collateralTypes;
+    uint256[] debtCeilings;
+    uint256 earliestExecutionTime;
 
     function setUp() public override {
         super.setUp();
         deployStable("");
-        wait = pause.delay();
+        earliestExecutionTime = pause.delay();
     }
 
-    function elect() private {
+    function setUpAccess() private {
         DSRoles role = DSRoles(address(pause.authority()));
-        role.setRootUser(address(spell), true);
+        role.setRootUser(address(proposal), true);
     }
 
     function testConstructor() public {
-        ilks  = [ bytes32("GOLD"), bytes32("GELD") ];
-        lines = [ 100, 200 ];
+        _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
+        debtCeilings = [ 100, 200 ];
 
-        spell = new MultiLineSpell(address(pause), address(govActions), address(cdpEngine), ilks, lines);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
 
-        for (uint256 i = 0; i < ilks.length; i++) {
-            assertEq(spell.ilks(i), ilks[i]);
+        for (uint256 i = 0; i < _collateralTypes.length; i++) {
+            assertEq(proposal.collateralTypes(i), _collateralTypes[i]);
         }
-        for (uint256 i = 0; i < lines.length; i++) {
-            assertEq(spell.lines(i), lines[i]);
+        for (uint256 i = 0; i < debtCeilings.length; i++) {
+            assertEq(proposal.debtCeilings(i), debtCeilings[i]);
         }
 
-        assertEq(address(spell.pause()), address(pause));
-        assertEq(address(spell.plan()),  address(govActions));
-        assertEq(address(spell.vat()),   address(cdpEngine));
+        assertEq(address(proposal.pause()), address(pause));
+        assertEq(address(proposal.target()),  address(govActions));
+        assertEq(address(proposal.cdpEngine()),   address(cdpEngine));
 
-        assertEq(spell.eta(), 0);
-        assertTrue(!spell.done());
+        assertEq(proposal.earliestExecutionTime(), 0);
+        assertTrue(!proposal.executed());
     }
 
-    function testFailCastEmptyIlks() public {
-        lines = [ 1 ];
-        spell = new MultiLineSpell(address(pause), address(govActions), address(cdpEngine), ilks, lines);
-        elect();
-        spell.schedule();
-        hevm.warp(now + wait);
+    function testFailProposalEmptyCollateralTypes() public {
+        debtCeilings = [ 1 ];
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        setUpAccess();
+        proposal.scheduleProposal();
+        hevm.warp(now + earliestExecutionTime);
 
-        spell.cast();
+        proposal.executeProposal();
     }
 
-    function testFailCastEmptyLines() public {
-        ilks = [ bytes32("GOLD") ];
-        spell = new MultiLineSpell(address(pause), address(govActions), address(cdpEngine), ilks, lines);
-        elect();
-        spell.schedule();
-        hevm.warp(now + wait);
+    function testFailProposalEmptyDebtCeilings() public {
+        _collateralTypes = [ bytes32("GOLD") ];
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        setUpAccess();
+        proposal.scheduleProposal();
+        hevm.warp(now + earliestExecutionTime);
 
-        spell.cast();
+        proposal.executeProposal();
     }
 
-    function testFailCastBothEmpty() public {
-        spell = new MultiLineSpell(address(pause), address(govActions), address(cdpEngine), ilks, lines);
-        elect();
-        spell.schedule();
-        hevm.warp(now + wait);
+    function testFailProposalBothEmpty() public {
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        setUpAccess();
+        proposal.scheduleProposal();
+        hevm.warp(now + earliestExecutionTime);
 
-        spell.cast();
+        proposal.executeProposal();
     }
 
-    function testFailCastMismatchedLengths() public {
-        ilks = new bytes32[](1);
-        lines = new uint256[](2);
-        spell = new MultiLineSpell(address(pause), address(govActions), address(cdpEngine), ilks, lines);
-        elect();
-        spell.schedule();
-        hevm.warp(now + wait);
+    function testFailProposalMismatchedLengths() public {
+        _collateralTypes = new bytes32[](1);
+        debtCeilings = new uint256[](2);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        setUpAccess();
+        proposal.scheduleProposal();
+        hevm.warp(now + earliestExecutionTime);
 
-        spell.cast();
+        proposal.executeProposal();
     }
 
-    function testMultiLineCast() public {
-        ilks  = [ bytes32("GOLD"), bytes32("GELD") ];
-        lines = [ 100, 200 ];
+    function testMultiDebtCeilingProposal() public {
+        _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
+        debtCeilings = [ 100, 200 ];
 
-        spell = new MultiLineSpell(address(pause), address(govActions), address(cdpEngine), ilks, lines);
-        elect();
-        spell.schedule();
-        hevm.warp(now + wait);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        setUpAccess();
+        proposal.scheduleProposal();
+        hevm.warp(now + earliestExecutionTime);
 
-        spell.cast();
+        proposal.executeProposal();
 
-        for (uint8 i = 0; i < ilks.length; i++) {
-            (,,, uint256 l,,) = cdpEngine.collateralTypes(ilks[i]);
-            assertEq(lines[i], l);
+        for (uint8 i = 0; i < _collateralTypes.length; i++) {
+            (,,, uint256 l,,) = cdpEngine.collateralTypes(_collateralTypes[i]);
+            assertEq(debtCeilings[i], l);
         }
     }
 
-    function testFailRepeatedCast() public {
-        ilks  = [ bytes32("GOLD"), bytes32("GELD") ];
-        lines = [ 100, 200 ];
+    function testFailRepeatedProposalExecution() public {
+        _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
+        debtCeilings = [ 100, 200 ];
 
-        spell = new MultiLineSpell(address(pause), address(govActions), address(cdpEngine), ilks, lines);
-        elect();
-        spell.schedule();
-        hevm.warp(now + wait);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        setUpAccess();
+        proposal.scheduleProposal();
+        hevm.warp(now + earliestExecutionTime);
 
-        spell.cast();
-        spell.cast();
+        proposal.executeProposal();
+        proposal.executeProposal();
     }
 }
