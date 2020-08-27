@@ -48,9 +48,9 @@ contract CollateralDeployer {
         ConfigLike(addrs[0]).modifyParameters(_collateralType, "debtCeiling", values[0]); // cdpEngine.modifyParameters(...);
         ConfigLike(addrs[1]).modifyParameters(_collateralType, "liquidationQuantity", values[5]); // liquidationEngine.modifyParameters(...);
         ConfigLike(addrs[1]).modifyParameters(_collateralType, "liquidationPenalty", values[4]); // liquidationEngine.modifyParameters(...);
-        ConfigLike(addrs[2]).modifyParameters(_collateralType, "stabilityFee", values[3]); // taxCollector.modifyParameters(...);
+        ConfigLike(addrs[2]).modifyParameters(_collateralType, "stabilityFee", values[3]); // taxCollector.modifyParameters(...);            
         ConfigLike(addrs[3]).modifyParameters(_collateralType, "safetyCRatio", values[1]); // oracleRelayer.modifyParameters(...);
-        ConfigLike(addrs[3]).modifyParameters(_collateralType, "liquidationCRatio", values[2]); // added, check
+        ConfigLike(addrs[3]).modifyParameters(_collateralType, "liquidationCRatio", values[2]); // liquidationEngine.modifyParameters(...);
 
         OracleRelayerLike(addrs[3]).updateCollateralPrice(_collateralType); // oracleRelayer.updateCollateralPrice(collateralType);
     }
