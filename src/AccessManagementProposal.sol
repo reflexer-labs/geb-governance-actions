@@ -58,7 +58,6 @@ contract AccessManagementProposal {
         require(earliestExecutionTime == 0, "proposal-already-scheduled");
         earliestExecutionTime = now + PauseLike(pause).delay();
 
-        // ConfigLike(addrs[0]).addAuthorization(addrs[5]); // target.addAuthorization(address);
         for (uint256 i = 0; i < gebModules.length; i++) {
             bytes memory signature =
                 abi.encodeWithSignature(
