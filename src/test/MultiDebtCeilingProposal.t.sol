@@ -28,7 +28,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployStable("");
+        deployBond("");
         earliestExecutionTime = pause.delay();
     }
 
@@ -41,7 +41,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
         debtCeilings = [ 100, 200 ];
 
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
 
         for (uint256 i = 0; i < _collateralTypes.length; i++) {
             assertEq(proposal.collateralTypes(i), _collateralTypes[i]);
@@ -52,7 +52,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
 
         assertEq(address(proposal.pause()), address(pause));
         assertEq(address(proposal.target()),  address(govActions));
-        assertEq(address(proposal.cdpEngine()),   address(cdpEngine));
+        assertEq(address(proposal.safeEngine()),   address(safeEngine));
 
         assertEq(proposal.earliestExecutionTime(), 0);
         assertTrue(!proposal.executed());
@@ -60,7 +60,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
 
     function testFailProposalEmptyCollateralTypes() public {
         debtCeilings = [ 1 ];
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -70,7 +70,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
 
     function testFailProposalEmptyDebtCeilings() public {
         _collateralTypes = [ bytes32("GOLD") ];
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -79,7 +79,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
     }
 
     function testFailProposalBothEmpty() public {
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -90,7 +90,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
     function testFailProposalMismatchedLengths() public {
         _collateralTypes = new bytes32[](1);
         debtCeilings = new uint256[](2);
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -102,7 +102,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
         debtCeilings = [ 100, 200 ];
 
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -110,7 +110,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
 
         for (uint8 i = 0; i < _collateralTypes.length; i++) {
-            (,,, uint256 l,,) = cdpEngine.collateralTypes(_collateralTypes[i]);
+            (,,, uint256 l,,) = safeEngine.collateralTypes(_collateralTypes[i]);
             assertEq(debtCeilings[i], l);
         }
     }
@@ -119,7 +119,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
         debtCeilings = [ 100, 200 ];
 
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), _collateralTypes, debtCeilings);
+        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);

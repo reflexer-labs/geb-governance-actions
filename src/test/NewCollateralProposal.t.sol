@@ -22,14 +22,14 @@ contract NewCollateralProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployStable("");
+        deployBond("");
 
         nctToken = new DSToken(collateralType);
         nctToken.mint(1 ether);
-        nctBasicCollateralJoin = new BasicCollateralJoin(address(cdpEngine), collateralType, address(nctToken));
+        nctBasicCollateralJoin = new BasicCollateralJoin(address(safeEngine), collateralType, address(nctToken));
         nctOrcl = new DSValue();
         nctOrcl.updateResult(uint(300 ether));
-        nctBasicCollateralAuctionHouse = englishCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(cdpEngine), collateralType);
+        nctBasicCollateralAuctionHouse = englishCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), collateralType);
 
         
         nctBasicCollateralAuctionHouse.modifyParameters("osm", address(nctOrcl));
@@ -43,7 +43,7 @@ contract NewCollateralProposalTest is GebDeployTestBase {
             collateralType,
             address(pause),
             [
-                address(cdpEngine),
+                address(safeEngine),
                 address(liquidationEngine),
                 address(taxCollector),
                 address(oracleRelayer),
@@ -53,12 +53,12 @@ contract NewCollateralProposalTest is GebDeployTestBase {
                 address(nctBasicCollateralAuctionHouse)
             ],
             [
-                10000 * 10 ** 45, // debtCeiling
-                1500000000 ether, // safetyCRatio
-                1500000000 ether, // liquidationCRatio
-                1.05 * 10 ** 27, // stabilityFee
-                ONE, // liquidationPenalty
-                10000 ether // collateralToSell
+                uint256(10000 * 10 ** 45), // debtCeiling [rad]
+                1500000000 ether, // safetyCRatio  [ray]
+                1500000000 ether, // liquidationCRatio [ray]
+                1.05 * 10 ** 27, // stabilityFee [rad]
+                1 ether, // liquidationPenalty [wad]
+                10000 * 10 ** 45 // liquidationQuantity [rad]
             ]
         );
 
@@ -71,63 +71,67 @@ contract NewCollateralProposalTest is GebDeployTestBase {
     }
 
     function testVariables() public {
-        (,,,uint collType,,) = cdpEngine.collateralTypes(collateralType);
-        assertEq(collType, uint(10000 * 10 ** 45));
+        (,,,uint debtCeiling,,) = safeEngine.collateralTypes(collateralType);
+        assertEq(debtCeiling, uint(10000 * 10 ** 45));
         (OracleLike orcl, uint safetyCRatio, uint liquidationCRatio) = oracleRelayer.collateralTypes(collateralType);
         assertEq(address(orcl), address(nctOrcl));
         assertEq(safetyCRatio, uint(1500000000 ether));
         assertEq(liquidationCRatio, uint(1500000000 ether));
         (uint tax,) = taxCollector.collateralTypes(collateralType);
         assertEq(tax, uint(1.05 * 10 ** 27));
-        (address auction, uint liquidationPenalty, uint collateralToSell) = liquidationEngine.collateralTypes(collateralType);
+        (address auction, uint liquidationPenalty, uint liquidationQuantity) = liquidationEngine.collateralTypes(collateralType);
         assertEq(auction, address(nctBasicCollateralAuctionHouse));
-        assertEq(liquidationPenalty, ONE);
-        assertEq(collateralToSell, uint(10000 ether));
-        assertEq(cdpEngine.authorizedAccounts(address(nctBasicCollateralJoin)), 1);
+        assertEq(liquidationPenalty, 1 ether);
+        assertEq(liquidationQuantity, uint(10000 * 10 ** 45));
+        assertEq(safeEngine.authorizedAccounts(address(nctBasicCollateralJoin)), 1);
+        assertEq(liquidationEngine.authorizedAccounts(address(nctBasicCollateralAuctionHouse)), 1);
     }
 
-    function testModifyCDPCollateralization() public {
+    function testModifySAFECollateralization() public {
         assertEq(coin.balanceOf(address(this)), 0);
         nctBasicCollateralJoin.join(address(this), 1 ether);
 
-        cdpEngine.modifyCDPCollateralization(collateralType, address(this), address(this), address(this), 1 ether, 100 ether);
+        safeEngine.modifySAFECollateralization(collateralType, address(this), address(this), address(this), 1 ether, 100 ether);
 
-        cdpEngine.approveCDPModification(address(coinJoin));
+        safeEngine.approveSAFEModification(address(coinJoin));
         coinJoin.exit(address(this), 100 ether);
         assertEq(coin.balanceOf(address(this)), 100 ether);
     }
 
     function testAuction() public {
-        this.modifyParameters(address(liquidationEngine), collateralType, "collateralToSell", 1 ether); // 1 unit of collateral per batch
-        this.modifyParameters(address(liquidationEngine), collateralType, "liquidationPenalty", ONE);
+        this.modifyParameters(address(liquidationEngine), collateralType, "liquidationQuantity", 10 ** 45); // 1 unit of collateral per batch [rad]
+        this.modifyParameters(address(liquidationEngine), collateralType, "liquidationPenalty", 1 ether);
+
         nctBasicCollateralJoin.join(address(this), 1 ether);
-        cdpEngine.modifyCDPCollateralization(collateralType, address(this), address(this), address(this), 1 ether, 200 ether); // Maximun RAI generated
+        safeEngine.modifySAFECollateralization(collateralType, address(this), address(this), address(this), 1 ether, 200 ether); // Maximun RAI generated
         nctOrcl.updateResult(uint(300 ether - 1)); // Decrease price in 1 wei
         oracleRelayer.updateCollateralPrice(collateralType);
-        assertEq(cdpEngine.tokenCollateral(collateralType, address(nctBasicCollateralAuctionHouse)), 0);
-        uint batchId = liquidationEngine.liquidateCDP(collateralType, address(this));
-        assertEq(cdpEngine.tokenCollateral(collateralType, address(nctBasicCollateralAuctionHouse)), 1 ether);
+        assertEq(safeEngine.tokenCollateral(collateralType, address(nctBasicCollateralAuctionHouse)), 0);
+
+        uint batchId = liquidationEngine.liquidateSAFE(collateralType, address(this));
+        (,uint amountToSell,,,,,,uint amountToRaise) = nctBasicCollateralAuctionHouse.bids(batchId);
+        assertEq(safeEngine.tokenCollateral(collateralType, address(nctBasicCollateralAuctionHouse)), amountToSell);
 
         address(user1).transfer(10 ether);
         user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
-        user1.doModifyCDPCollateralization(address(cdpEngine), "ETH", address(user1), address(user1), address(user1), 10 ether, 1000 ether);
+        user1.doModifySAFECollateralization(address(safeEngine), "ETH", address(user1), address(user1), address(user1), 10 ether, 1000 ether);
 
         address(user2).transfer(10 ether);
         user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
-        user2.doModifyCDPCollateralization(address(cdpEngine), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
+        user2.doModifySAFECollateralization(address(safeEngine), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
 
-        user1.doCDPApprove(address(cdpEngine), address(nctBasicCollateralAuctionHouse));
-        user2.doCDPApprove(address(cdpEngine), address(nctBasicCollateralAuctionHouse));
+        user1.doSAFEApprove(address(safeEngine), address(nctBasicCollateralAuctionHouse));
+        user2.doSAFEApprove(address(safeEngine), address(nctBasicCollateralAuctionHouse));
 
-        user1.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, 1 ether, rad(100 ether));
-        user2.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, 1 ether, rad(140 ether));
-        user1.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, 1 ether, rad(180 ether));
-        user2.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, 1 ether, rad(200 ether));
+        user1.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, amountToSell, rad(0.1 ether));
+        user2.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, amountToSell, rad(0.2 ether));
+        user1.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, amountToSell, rad(0.5 ether));
+        user2.doIncreaseBidSize(address(nctBasicCollateralAuctionHouse), batchId, amountToSell, rad(1 ether));
 
-        user1.doDecreaseSoldAmount(address(nctBasicCollateralAuctionHouse), batchId, 0.8 ether, rad(200 ether));
-        user2.doDecreaseSoldAmount(address(nctBasicCollateralAuctionHouse), batchId, 0.7 ether, rad(200 ether));
+        user1.doDecreaseSoldAmount(address(nctBasicCollateralAuctionHouse), batchId, 0.00008 ether, rad(1 ether));
+        user2.doDecreaseSoldAmount(address(nctBasicCollateralAuctionHouse), batchId, 0.00007 ether, rad(1 ether));
         hevm.warp(nctBasicCollateralAuctionHouse.totalAuctionLength() - 1);
-        user1.doDecreaseSoldAmount(address(nctBasicCollateralAuctionHouse), batchId, 0.6 ether, rad(200 ether));
+        user1.doDecreaseSoldAmount(address(nctBasicCollateralAuctionHouse), batchId, 0.00006 ether, rad(1 ether));
         hevm.warp(now + nctBasicCollateralAuctionHouse.totalAuctionLength() + 1);
         user1.doSettleAuction(address(nctBasicCollateralAuctionHouse), batchId);
     }

@@ -26,18 +26,18 @@ contract MultiDebtCeilingProposal {
     address   public target;
     bytes32   public codeHash;
     uint256   public earliestExecutionTime;
-    address   public cdpEngine;
+    address   public safeEngine;
     bytes32[] public collateralTypes;
     uint256[] public debtCeilings;
     bool      public executed;
 
-    constructor(address _pause, address _target, address _cdpEngine, bytes32[] memory _collateralTypes, uint256[] memory _debtCeilings) public {
+    constructor(address _pause, address _target, address _safeEngine, bytes32[] memory _collateralTypes, uint256[] memory _debtCeilings) public {
         require(_collateralTypes.length == _debtCeilings.length, "mismatched lengths of collateralTypes, debtCeilings");
         require(_collateralTypes.length > 0, "no collateral types");
 
         pause = PauseLike(_pause);
         target  = _target;
-        cdpEngine   = _cdpEngine;
+        safeEngine   = _safeEngine;
         collateralTypes  = _collateralTypes;
         debtCeilings = _debtCeilings;
         bytes32 _codeHash;
@@ -53,7 +53,7 @@ contract MultiDebtCeilingProposal {
             bytes memory signature =
                 abi.encodeWithSignature(
                     "modifyParameters(address,bytes32,bytes32,uint256)",
-                    cdpEngine,
+                    safeEngine,
                     collateralTypes[i],
                     bytes32("debtCeiling"),
                     debtCeilings[i]
@@ -69,7 +69,7 @@ contract MultiDebtCeilingProposal {
             bytes memory signature =
                 abi.encodeWithSignature(
                     "modifyParameters(address,bytes32,bytes32,uint256)",
-                    cdpEngine,
+                    safeEngine,
                     collateralTypes[i],
                     bytes32("debtCeiling"),
                     debtCeilings[i]
