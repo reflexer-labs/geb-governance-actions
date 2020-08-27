@@ -19,67 +19,70 @@ abstract contract PauseLike {
     function executeTransaction(address, bytes32, bytes memory, uint256) public virtual;
 }
 
-    /**
-    * @notice Adds and removes auths from any of the contracts
-    *  
-    **/
-contract AccessManafementProposal {
+contract AccessManagementProposal {
     PauseLike public pause;
+    address   public target;
     address[] public gebModules;
-    uint256   public earliestExecutionTime;
     address[] public addresses;
-    bool[] public grantAccess;
+    uint8[]   public grantAccess;    
+    uint256   public earliestExecutionTime;
+    bytes32   public codeHash;
     bool      public executed;
 
-    constructor(address _pause, address[] memory _gebModules, address[] memory _addresses, bool[] memory _grantAccess) public {
+    /**
+    * @notice Constructor, sets up proposal
+    * @param _pause - DSPause
+    * @param _target - govActions
+    * @param _gebModules - Geb modules in which access will be edited
+    * @param _addresses - List of addresses to grant/revoke access
+    * @param _grantAccess - set to 1 to grant access, 0 to revokes
+    **/
+    constructor(address _pause, address _target, address[] memory _gebModules, address[] memory _addresses, uint8[] memory _grantAccess) public {
         require(
             _gebModules.length == _addresses.length && _addresses.length  == _grantAccess.length, 
             "mismatched lengths of gebModules, addresses, and grantAccess");
         require(_gebModules.length > 0, "no modules listed");
 
         pause = PauseLike(_pause);
+        target  = _target;
         gebModules = _gebModules;
         addresses  = _addresses;
         grantAccess = _grantAccess;
+
+        bytes32 _codeHash;
+        assembly { _codeHash := extcodehash(_target) }
+        codeHash = _codeHash;
     }
 
     function scheduleProposal() public {
         require(earliestExecutionTime == 0, "proposal-already-scheduled");
         earliestExecutionTime = now + PauseLike(pause).delay();
 
-        bytes32 _codeHash;
-        address _module;
-
         // ConfigLike(addrs[0]).addAuthorization(addrs[5]); // target.addAuthorization(address);
         for (uint256 i = 0; i < gebModules.length; i++) {
             bytes memory signature =
                 abi.encodeWithSignature(
-                    (grantAccess[i]) ? "addAuthorization(address)" : "removeAuthorization(address)",
+                    (grantAccess[i] != 0) ? "addAuthorization(address,address)" : "removeAuthorization(address,address)",
+                    gebModules[i],
                     addresses[i]
             );
 
-            _module = gebModules[i];
-            assembly { _codeHash := extcodehash(_module) }
-            pause.scheduleTransaction(gebModules[i], _codeHash, signature, earliestExecutionTime);
+            pause.scheduleTransaction(target, codeHash, signature, earliestExecutionTime);
         }
     }
 
     function executeProposal() public {
         require(!executed, "proposal-already-executed");
 
-        bytes32 _codeHash;
-        address _module;
-
         for (uint256 i = 0; i < gebModules.length; i++) {
             bytes memory signature =
                 abi.encodeWithSignature(
-                    (grantAccess[i]) ? "addAuthorization(address)" : "removeAuthorization(address)",
+                    (grantAccess[i] != 0) ? "addAuthorization(address,address)" : "removeAuthorization(address,address)",
+                    gebModules[i],
                     addresses[i]
             );
             
-            _module = gebModules[i];
-            assembly { _codeHash := extcodehash(_module) }
-            pause.executeTransaction(gebModules[i], _codeHash, signature, earliestExecutionTime);
+            pause.executeTransaction(target, codeHash, signature, earliestExecutionTime);
         }
 
         executed = true;
