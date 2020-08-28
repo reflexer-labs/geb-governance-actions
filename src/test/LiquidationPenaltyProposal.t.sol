@@ -22,7 +22,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
     LiquidationPenaltyProposal proposal;
     bytes32[] _collateralTypes;
     uint256[] liquidationPenalties;
-    uint256 earliestExecutionTime;
+    uint256   earliestExecutionTime;
 
     function setUp() public override {
         super.setUp();

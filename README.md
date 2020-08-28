@@ -20,7 +20,7 @@ proposal.executeProposal();
 ```
 
 ## Proposals
-This repository includes several pre-made proposals:
+This repository includes several pre-made proposals (check unit tests for examples of usage):
 - ...
 
 
