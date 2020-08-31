@@ -31,6 +31,14 @@ contract MultiDebtCeilingProposal {
     uint256[] public debtCeilings;
     bool      public executed;
 
+    /**
+    * @notice Constructor, sets up proposal to change multiple collateral debtCeilings
+    * @param _pause - DSPause
+    * @param _target - govActions
+    * @param _safeEngine - final target of proposal
+    * @param _collateralTypes - Array of types of collaterals
+    * @param _debtCeilings - Array of new debt ceilings
+    **/
     constructor(address _pause, address _target, address _safeEngine, bytes32[] memory _collateralTypes, uint256[] memory _debtCeilings) public {
         require(_collateralTypes.length == _debtCeilings.length, "mismatched lengths of collateralTypes, debtCeilings");
         require(_collateralTypes.length > 0, "no collateral types");

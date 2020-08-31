@@ -29,6 +29,14 @@ contract LiquidationPenaltyProposal {
     uint256[] public liquidationPenalties;
     bool      public executed;
 
+    /**
+    * @notice Constructor, sets up proposal
+    * @param _pause - DSPause
+    * @param _target - govActions
+    * @param _liquidationEngine - target of proposal
+    * @param _collateralTypes - Array of types of collaterals
+    * @param _liquidationPenalties - Array of new liquidation penalties
+    **/
     constructor(address _pause, address _target, address _liquidationEngine, bytes32[] memory _collateralTypes, uint256[] memory _liquidationPenalties) public {
         require(_collateralTypes.length == _liquidationPenalties.length, 
             "mismatched lengths of collateralTypes, _liquidationPenalties");

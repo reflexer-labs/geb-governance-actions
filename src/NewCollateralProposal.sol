@@ -65,6 +65,13 @@ contract NewCollateralProposal {
     uint256   public earliestExecutionTime;
     bytes     public signature;
 
+    /**
+    * @notice Constructor, sets up proposal to change multiple collateral debtCeilings
+    * @param collateralType_ - new collateral type
+    * @param pause_ - DSPause
+    * @param addrs - addresses of supporting contracts, check comments in CollateralDeployer for details
+    * @param values - parameters of new collateral, check comments in CollateralDeployer for details
+    **/
     constructor(bytes32 collateralType_, address pause_, address[8] memory addrs, uint[6] memory values) public {
         pause = pause_;
         address deployer = address(new CollateralDeployer());

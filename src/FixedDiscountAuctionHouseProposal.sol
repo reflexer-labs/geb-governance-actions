@@ -40,6 +40,13 @@ contract FixedDiscountAuctionHouseProposal {
     uint256   public expiration;
     bytes     public signature;
 
+    /**
+    * @notice Constructor, sets up proposal
+    * @param _pause - DSPause
+    * @param fixedDiscountAuctionHouse - fixedDiscountAuctionHouse
+    * @param parameters - parameters to change
+    * @param data - New values (convert both uint and addresses to bytes32)
+    **/
     constructor(address _pause, address fixedDiscountAuctionHouse, bytes32[] memory parameters, bytes32[] memory data) public {
         require(parameters.length == data.length, "mismatched lengths of parameters, data");
         require(parameters.length > 0, "no collateral types");

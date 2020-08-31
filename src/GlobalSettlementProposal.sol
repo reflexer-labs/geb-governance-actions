@@ -28,9 +28,10 @@ contract GlobalSettlementProposal {
     bool      public executed;
 
     /**
-    * @notice Constructor, sets up proposal
+    * @notice Constructor, sets up proposal to initiate global settlement
     * @param _pause - DSPause
     * @param _target - govActions
+    * @param _globalSettlement - global settlement contract
     **/
     constructor(address _pause, address _target, address _globalSettlement) public {
 

@@ -34,6 +34,15 @@ contract SecondaryTaxReceiversProposal {
     uint256   public expiration;
     bytes     public signature;
 
+    /**
+    * @notice Constructor, sets up proposal
+    * @param _pause - DSPause
+    * @param taxCollector - taxCollector, target of call
+    * @param collateralTypes - Array of types of collaterals
+    * @param positions - Array of positions of the secondary Tax receivers
+    * @param percentages - New percentages (tax collecting) for the receiver/asset, set to 0 to remove secondary Tax receiver
+    * @param secondaryReceivers - Array of addresses of taxReceivers
+    **/
     constructor(
         address _pause, 
         address taxCollector, 

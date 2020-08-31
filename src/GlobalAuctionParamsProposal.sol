@@ -29,6 +29,14 @@ contract GlobalAuctionParamsProposal {
     uint256   public debtAuctionBidSize;
     bool      public executed;
 
+    /**
+    * @notice Constructor, sets up proposal for updating global auction parameters
+    * @param _pause - DSPause
+    * @param _target - target of proposal (govActions)
+    * @param _accountingEngine - accountingEngine
+    * @param _initialDebtMintedTokens - initialDebtMintedTokens
+    * @param _debtAuctionBidSize - New debtAuctionBidSize
+    **/
     constructor(address _pause, address _target, address _accountingEngine, uint256 _initialDebtMintedTokens, uint256 _debtAuctionBidSize) public {
         require(_initialDebtMintedTokens > 0, "initialDebtMintedTokens = 0");
         require(_debtAuctionBidSize > 0, "debtAuctionBidSize = 0");

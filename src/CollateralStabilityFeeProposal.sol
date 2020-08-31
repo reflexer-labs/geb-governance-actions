@@ -29,6 +29,13 @@ contract CollateralStabilityFeeProposal {
     uint256   public expiration;
     bytes     public signature;
 
+    /**
+    * @notice Constructor, sets up proposal
+    * @param _pause - DSPause
+    * @param taxCollector - target of proposal
+    * @param collateralTypes - Array of types of collaterals
+    * @param stabilityFees - Array of new stability fees
+    **/
     constructor(address _pause, address taxCollector, bytes32[] memory collateralTypes, uint256[] memory stabilityFees) public {
         require(collateralTypes.length == stabilityFees.length, "mismatched lengths of collateralTypes, debtCeilings");
         require(collateralTypes.length > 0, "no collateral types");

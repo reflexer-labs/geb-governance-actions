@@ -29,6 +29,14 @@ contract LiquidationCRatioProposal {
     uint256[] public liquidationCRatios;
     bool      public executed;
 
+    /**
+    * @notice Constructor, sets up proposal
+    * @param _pause - DSPause
+    * @param _target - govActions
+    * @param _oracleRelayer - target of proposal
+    * @param _collateralTypes - Array of types of collaterals
+    * @param _liquidationCRatios - Array of new liquidation collateral ratios
+    **/
     constructor(address _pause, address _target, address _oracleRelayer, bytes32[] memory _collateralTypes, uint256[] memory _liquidationCRatios) public {
         require(_collateralTypes.length == _liquidationCRatios.length, 
             "mismatched lengths of collateralTypes, _liquidationCRatios");

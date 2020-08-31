@@ -32,6 +32,13 @@ contract DebtCeilingProposal {
     uint256   public debtCeiling;
     bool      public executed;
 
+    /**
+    * @notice Constructor, sets up proposal
+    * @param _pause - DSPause
+    * @param _target - target of proposal (govActions)
+    * @param _collateralType - CollateralType
+    * @param _debtCeiling - New debt ceiling
+    **/
     constructor(address _pause, address _target, address _cdpEngine, bytes32 _collateralType, uint256 _debtCeiling) public {
         pause          = PauseLike(_pause);
         target         = _target;

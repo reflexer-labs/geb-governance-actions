@@ -27,6 +27,12 @@ contract GlobalStabilityFeeProposal {
     uint256   public earliestExecutionTime;
     bytes     public signature;
 
+    /**
+    * @notice Constructor, sets up proposal
+    * @param _pause - DSPause
+    * @param taxCollector - taxCollector address
+    * @param globalStabilityFee - new global stability fee
+    **/
     constructor(address _pause, address taxCollector, uint256 globalStabilityFee) public {
         pause = _pause;
         address deployer = address(new Proposal());
