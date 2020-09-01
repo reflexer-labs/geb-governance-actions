@@ -33,22 +33,22 @@ contract DebtCeilingProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployStable("");
+        deployBond("");
         proposalDelay = pause.delay();
     }
 
     function testConstructor() public {
-        proposal = new DebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), collateralType, debtCeiling);
+        proposal = new DebtCeilingProposal(address(pause), address(govActions), address(safeEngine), collateralType, debtCeiling);
 
         bytes memory expectedSig = abi.encodeWithSignature(
             "modifyParameters(address,bytes32,bytes32,uint256)",
-            cdpEngine, collateralType, bytes32("debtCeiling"), debtCeiling
+            safeEngine, collateralType, bytes32("debtCeiling"), debtCeiling
         );
         assertEq0(proposal.signature(), expectedSig);
 
         assertEq(address(proposal.pause()), address(pause));
         assertEq(address(proposal.target()),  address(govActions));
-        assertEq(address(proposal.cdpEngine()),   address(cdpEngine));
+        assertEq(address(proposal.cdpEngine()),   address(safeEngine));
 
         assertEq(proposal.debtCeiling(), debtCeiling);
         assertEq(proposal.collateralType(),  collateralType);
@@ -58,18 +58,18 @@ contract DebtCeilingProposalTest is GebDeployTestBase {
     }
 
     function testExecution() public {
-        proposal = new DebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), collateralType, debtCeiling);
+        proposal = new DebtCeilingProposal(address(pause), address(govActions), address(safeEngine), collateralType, debtCeiling);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + proposalDelay);
 
         proposal.executeProposal();
-        (,,, uint256 l,,) = cdpEngine.collateralTypes(collateralType);
+        (,,, uint256 l,,) = safeEngine.collateralTypes(collateralType);
         assertEq(debtCeiling, l);
     }
 
     function testFailToReexecuteProposal() public {
-        proposal = new DebtCeilingProposal(address(pause), address(govActions), address(cdpEngine), collateralType, debtCeiling);
+        proposal = new DebtCeilingProposal(address(pause), address(govActions), address(safeEngine), collateralType, debtCeiling);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + proposalDelay);

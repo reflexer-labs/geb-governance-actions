@@ -1,5 +1,3 @@
-// Copyright (C) 2019 Lorenzo Manacorda <lorenzo@mailbox.org>
-//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -18,12 +16,12 @@ pragma solidity >=0.6.7;
 import "ds-test/test.sol";
 import "geb-deploy/test/GebDeploy.t.base.sol";
 
-import "../MultiDebtCeilingProposal.sol";
+import "../CollateralStabilityFeeProposal.sol";
 
-contract MultiDebtCeilingProposalTest is GebDeployTestBase {
-    MultiDebtCeilingProposal proposal;
+contract CollateralStabilityFeeProposalTest is GebDeployTestBase {
+    CollateralStabilityFeeProposal proposal;
     bytes32[] _collateralTypes;
-    uint256[] debtCeilings;
+    uint256[] stabilityFees;
     uint256 earliestExecutionTime;
 
     function setUp() public override {
@@ -39,28 +37,22 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
 
     function testConstructor() public {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
-        debtCeilings = [ 100, 200 ];
+        stabilityFees = [ 1000000564701133626865910626, 1030000000000000000000000000];  // 5% / day, 3% / second
 
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        proposal = new CollateralStabilityFeeProposal(address(pause), address(taxCollector), _collateralTypes, stabilityFees);
 
-        for (uint256 i = 0; i < _collateralTypes.length; i++) {
-            assertEq(proposal.collateralTypes(i), _collateralTypes[i]);
-        }
-        for (uint256 i = 0; i < debtCeilings.length; i++) {
-            assertEq(proposal.debtCeilings(i), debtCeilings[i]);
-        }
-
+        bytes memory signature = abi.encodeWithSignature("deploy(address,bytes32[],uint256[])", address(taxCollector), _collateralTypes, stabilityFees);
+        assertEq(keccak256(proposal.signature()), keccak256(signature));
         assertEq(address(proposal.pause()), address(pause));
-        assertEq(address(proposal.target()),  address(govActions));
-        assertEq(address(proposal.safeEngine()),   address(safeEngine));
 
         assertEq(proposal.earliestExecutionTime(), 0);
         assertTrue(!proposal.executed());
+        assertEq(proposal.expiration(), now + 30 days);
     }
 
     function testFailProposalEmptyCollateralTypes() public {
-        debtCeilings = [ 1 ];
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        stabilityFees = [ 1000000564701133626865910626 ];  // 5% / day
+        proposal = new CollateralStabilityFeeProposal(address(pause), address(taxCollector), _collateralTypes, stabilityFees);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -68,9 +60,9 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
     }
 
-    function testFailProposalEmptyDebtCeilings() public {
+    function testFailProposalEmptyStabilityFees() public {
         _collateralTypes = [ bytes32("GOLD") ];
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        proposal = new CollateralStabilityFeeProposal(address(pause), address(taxCollector), _collateralTypes, stabilityFees);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -79,7 +71,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
     }
 
     function testFailProposalBothEmpty() public {
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        proposal = new CollateralStabilityFeeProposal(address(pause), address(taxCollector), _collateralTypes, stabilityFees);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -89,8 +81,8 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
 
     function testFailProposalMismatchedLengths() public {
         _collateralTypes = new bytes32[](1);
-        debtCeilings = new uint256[](2);
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        stabilityFees = new uint256[](2);
+        proposal = new CollateralStabilityFeeProposal(address(pause), address(taxCollector), _collateralTypes, stabilityFees);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -98,11 +90,11 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
     }
 
-    function testMultiDebtCeilingProposal() public {
+    function testCollateralStabilityFeeProposalExecution() public {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
-        debtCeilings = [ 100, 200 ];
+        stabilityFees = [ 1000000564701133626865910626, 1030000000000000000000000000];  // 5% / day, 3% / second
 
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        proposal = new CollateralStabilityFeeProposal(address(pause), address(taxCollector), _collateralTypes, stabilityFees);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -110,21 +102,33 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
 
         for (uint8 i = 0; i < _collateralTypes.length; i++) {
-            (,,, uint256 l,,) = safeEngine.collateralTypes(_collateralTypes[i]);
-            assertEq(debtCeilings[i], l);
+            (uint256 s,) = taxCollector.collateralTypes(_collateralTypes[i]);
+            assertEq(stabilityFees[i], s);
         }
     }
 
     function testFailRepeatedProposalExecution() public {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
-        debtCeilings = [ 100, 200 ];
+        stabilityFees = [ 1000000564701133626865910626, 1030000000000000000000000000];  // 5% / day, 3% / second
 
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        proposal = new CollateralStabilityFeeProposal(address(pause), address(taxCollector), _collateralTypes, stabilityFees);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
 
         proposal.executeProposal();
+        proposal.executeProposal();
+    }
+
+    function testFailProposalExpired() public {
+        _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
+        stabilityFees = [ 1000000564701133626865910626, 1030000000000000000000000000];  // 5% / day, 3% / second
+
+        proposal = new CollateralStabilityFeeProposal(address(pause), address(taxCollector), _collateralTypes, stabilityFees);
+        setUpAccess();
+        proposal.scheduleProposal();
+        hevm.warp(now + 30 days);
+
         proposal.executeProposal();
     }
 }

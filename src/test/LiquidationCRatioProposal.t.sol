@@ -1,5 +1,3 @@
-// Copyright (C) 2019 Lorenzo Manacorda <lorenzo@mailbox.org>
-//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -18,18 +16,22 @@ pragma solidity >=0.6.7;
 import "ds-test/test.sol";
 import "geb-deploy/test/GebDeploy.t.base.sol";
 
-import "../MultiDebtCeilingProposal.sol";
+import "../LiquidationCRatioProposal.sol";
 
-contract MultiDebtCeilingProposalTest is GebDeployTestBase {
-    MultiDebtCeilingProposal proposal;
+contract LiquidationCRatioProposalTest is GebDeployTestBase {
+    LiquidationCRatioProposal proposal;
     bytes32[] _collateralTypes;
-    uint256[] debtCeilings;
-    uint256 earliestExecutionTime;
+    uint256[] liquidationCRatios;
+    uint256   earliestExecutionTime;
 
     function setUp() public override {
         super.setUp();
         deployBond("");
         earliestExecutionTime = pause.delay();
+
+        // raising safetyCRatio from 0 (has to be larger than liquidationCRatio)
+        this.modifyParameters(address(oracleRelayer),bytes32("GOLD"), "safetyCRatio", 2100000000 ether);
+        this.modifyParameters(address(oracleRelayer),bytes32("GELD"), "safetyCRatio", 2100000000 ether);
     }
 
     function setUpAccess() private {
@@ -39,28 +41,29 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
 
     function testConstructor() public {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
-        debtCeilings = [ 100, 200 ];
+        liquidationCRatios = [ 1500000000 ether, 2000000000 ether ];
 
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        proposal = new LiquidationCRatioProposal(address(pause), address(govActions), address(oracleRelayer), _collateralTypes, liquidationCRatios);
 
         for (uint256 i = 0; i < _collateralTypes.length; i++) {
             assertEq(proposal.collateralTypes(i), _collateralTypes[i]);
         }
-        for (uint256 i = 0; i < debtCeilings.length; i++) {
-            assertEq(proposal.debtCeilings(i), debtCeilings[i]);
+        for (uint256 i = 0; i < liquidationCRatios.length; i++) {
+            assertEq(proposal.liquidationCRatios(i), liquidationCRatios[i]);
         }
 
         assertEq(address(proposal.pause()), address(pause));
-        assertEq(address(proposal.target()),  address(govActions));
-        assertEq(address(proposal.safeEngine()),   address(safeEngine));
+        assertEq(address(proposal.target()), address(govActions));
+        assertEq(address(proposal.oracleRelayer()), address(oracleRelayer));
 
         assertEq(proposal.earliestExecutionTime(), 0);
         assertTrue(!proposal.executed());
     }
 
     function testFailProposalEmptyCollateralTypes() public {
-        debtCeilings = [ 1 ];
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        liquidationCRatios = [ 1.05 ether, 1.15 ether ];
+
+        proposal = new LiquidationCRatioProposal(address(pause), address(govActions), address(oracleRelayer), _collateralTypes, liquidationCRatios);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -68,9 +71,9 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
     }
 
-    function testFailProposalEmptyDebtCeilings() public {
+    function testFailProposalEmptyLiquidationCRatios() public {
         _collateralTypes = [ bytes32("GOLD") ];
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        proposal = new LiquidationCRatioProposal(address(pause), address(govActions), address(oracleRelayer), _collateralTypes, liquidationCRatios);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -79,7 +82,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
     }
 
     function testFailProposalBothEmpty() public {
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        proposal = new LiquidationCRatioProposal(address(pause), address(govActions), address(oracleRelayer), _collateralTypes, liquidationCRatios);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -89,8 +92,8 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
 
     function testFailProposalMismatchedLengths() public {
         _collateralTypes = new bytes32[](1);
-        debtCeilings = new uint256[](2);
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        liquidationCRatios = new uint256[](2);
+        proposal = new LiquidationCRatioProposal(address(pause), address(govActions), address(oracleRelayer), _collateralTypes, liquidationCRatios);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -98,28 +101,31 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
         proposal.executeProposal();
     }
 
-    function testMultiDebtCeilingProposal() public {
-        _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
-        debtCeilings = [ 100, 200 ];
+    function testLiquidationCRatioProposal() public {
 
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
+        liquidationCRatios = [ 1500000000 ether, 1900000000 ether ];
+
+        proposal = new LiquidationCRatioProposal(address(pause), address(govActions), address(oracleRelayer), _collateralTypes, liquidationCRatios);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
 
+        emit log_named_uint("liquidationCRatio", oracleRelayer.liquidationCRatio(bytes32("GOLD")));
+        emit log_named_uint("safetyCRatio", oracleRelayer.safetyCRatio(bytes32("GOLD")));
         proposal.executeProposal();
 
         for (uint8 i = 0; i < _collateralTypes.length; i++) {
-            (,,, uint256 l,,) = safeEngine.collateralTypes(_collateralTypes[i]);
-            assertEq(debtCeilings[i], l);
+            (,, uint256 l) = oracleRelayer.collateralTypes(_collateralTypes[i]);
+            assertEq(liquidationCRatios[i], l);
         }
     }
 
     function testFailRepeatedProposalExecution() public {
         _collateralTypes  = [ bytes32("GOLD"), bytes32("GELD") ];
-        debtCeilings = [ 100, 200 ];
+        liquidationCRatios = [ 1500000000 ether, 2100000000 ether ];
 
-        proposal = new MultiDebtCeilingProposal(address(pause), address(govActions), address(safeEngine), _collateralTypes, debtCeilings);
+        proposal = new LiquidationCRatioProposal(address(pause), address(govActions), address(oracleRelayer), _collateralTypes, liquidationCRatios);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);

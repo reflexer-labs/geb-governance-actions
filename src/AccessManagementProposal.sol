@@ -1,5 +1,3 @@
-// Copyright (C) 2019 Lorenzo Manacorda <lorenzo@mailbox.org>
-//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -21,33 +19,36 @@ abstract contract PauseLike {
     function executeTransaction(address, bytes32, bytes memory, uint256) public virtual;
 }
 
-contract MultiDebtCeilingProposal {
+contract AccessManagementProposal {
     PauseLike public pause;
     address   public target;
-    bytes32   public codeHash;
+    address[] public gebModules;
+    address[] public addresses;
+    uint8[]   public grantAccess;    
     uint256   public earliestExecutionTime;
-    address   public safeEngine;
-    bytes32[] public collateralTypes;
-    uint256[] public debtCeilings;
+    bytes32   public codeHash;
     bool      public executed;
 
     /**
-    * @notice Constructor, sets up proposal to change multiple collateral debtCeilings
+    * @notice Constructor, sets up proposal
     * @param _pause - DSPause
     * @param _target - govActions
-    * @param _safeEngine - final target of proposal
-    * @param _collateralTypes - Array of types of collaterals
-    * @param _debtCeilings - Array of new debt ceilings
+    * @param _gebModules - Geb modules in which access will be edited
+    * @param _addresses - List of addresses to grant/revoke access
+    * @param _grantAccess - set to 1 to grant access, 0 to revokes
     **/
-    constructor(address _pause, address _target, address _safeEngine, bytes32[] memory _collateralTypes, uint256[] memory _debtCeilings) public {
-        require(_collateralTypes.length == _debtCeilings.length, "mismatched lengths of collateralTypes, debtCeilings");
-        require(_collateralTypes.length > 0, "no collateral types");
+    constructor(address _pause, address _target, address[] memory _gebModules, address[] memory _addresses, uint8[] memory _grantAccess) public {
+        require(
+            _gebModules.length == _addresses.length && _addresses.length  == _grantAccess.length, 
+            "mismatched lengths of gebModules, addresses, and grantAccess");
+        require(_gebModules.length > 0, "no modules listed");
 
         pause = PauseLike(_pause);
         target  = _target;
-        safeEngine   = _safeEngine;
-        collateralTypes  = _collateralTypes;
-        debtCeilings = _debtCeilings;
+        gebModules = _gebModules;
+        addresses  = _addresses;
+        grantAccess = _grantAccess;
+
         bytes32 _codeHash;
         assembly { _codeHash := extcodehash(_target) }
         codeHash = _codeHash;
@@ -57,15 +58,14 @@ contract MultiDebtCeilingProposal {
         require(earliestExecutionTime == 0, "proposal-already-scheduled");
         earliestExecutionTime = now + PauseLike(pause).delay();
 
-        for (uint256 i = 0; i < collateralTypes.length; i++) {
+        for (uint256 i = 0; i < gebModules.length; i++) {
             bytes memory signature =
                 abi.encodeWithSignature(
-                    "modifyParameters(address,bytes32,bytes32,uint256)",
-                    safeEngine,
-                    collateralTypes[i],
-                    bytes32("debtCeiling"),
-                    debtCeilings[i]
+                    (grantAccess[i] != 0) ? "addAuthorization(address,address)" : "removeAuthorization(address,address)",
+                    gebModules[i],
+                    addresses[i]
             );
+
             pause.scheduleTransaction(target, codeHash, signature, earliestExecutionTime);
         }
     }
@@ -73,15 +73,14 @@ contract MultiDebtCeilingProposal {
     function executeProposal() public {
         require(!executed, "proposal-already-executed");
 
-        for (uint256 i = 0; i < collateralTypes.length; i++) {
+        for (uint256 i = 0; i < gebModules.length; i++) {
             bytes memory signature =
                 abi.encodeWithSignature(
-                    "modifyParameters(address,bytes32,bytes32,uint256)",
-                    safeEngine,
-                    collateralTypes[i],
-                    bytes32("debtCeiling"),
-                    debtCeilings[i]
+                    (grantAccess[i] != 0) ? "addAuthorization(address,address)" : "removeAuthorization(address,address)",
+                    gebModules[i],
+                    addresses[i]
             );
+            
             pause.executeTransaction(target, codeHash, signature, earliestExecutionTime);
         }
 

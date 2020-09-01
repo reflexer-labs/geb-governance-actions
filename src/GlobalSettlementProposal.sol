@@ -1,5 +1,3 @@
-// Copyright (C) 2019 Lorenzo Manacorda <lorenzo@mailbox.org>
-//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -21,55 +19,49 @@ abstract contract PauseLike {
     function executeTransaction(address, bytes32, bytes memory, uint256) public virtual;
 }
 
-contract DebtCeilingProposal {
+contract GlobalSettlementProposal {
     PauseLike public pause;
-    address   public target;
-    bytes32   public codeHash;
+    address   public target; 
+    address   public globalSettlement;
     uint256   public earliestExecutionTime;
-    bytes     public signature;
-    address   public cdpEngine;
-    bytes32   public collateralType;
-    uint256   public debtCeiling;
+    bytes32   public codeHash;
     bool      public executed;
 
     /**
-    * @notice Constructor, sets up proposal
+    * @notice Constructor, sets up proposal to initiate global settlement
     * @param _pause - DSPause
-    * @param _target - target of proposal (govActions)
-    * @param _collateralType - CollateralType
-    * @param _debtCeiling - New debt ceiling
+    * @param _target - govActions
+    * @param _globalSettlement - global settlement contract
     **/
-    constructor(address _pause, address _target, address _cdpEngine, bytes32 _collateralType, uint256 _debtCeiling) public {
-        pause          = PauseLike(_pause);
-        target         = _target;
-        cdpEngine      = _cdpEngine;
-        collateralType = _collateralType;
-        debtCeiling    = _debtCeiling;
-        signature      = abi.encodeWithSignature(
-                "modifyParameters(address,bytes32,bytes32,uint256)",
-                _cdpEngine,
-                _collateralType,
-                bytes32("debtCeiling"),
-                _debtCeiling
-        );
+    constructor(address _pause, address _target, address _globalSettlement) public {
+
+        pause = PauseLike(_pause);
+        target  = _target;
+        globalSettlement = _globalSettlement;
+
         bytes32 _codeHash;
         assembly { _codeHash := extcodehash(_target) }
         codeHash = _codeHash;
     }
 
-    function scheduleProposal() public { // schedule
+    function scheduleProposal() public {
         require(earliestExecutionTime == 0, "proposal-already-scheduled");
         earliestExecutionTime = now + PauseLike(pause).delay();
+
+        bytes memory signature =
+                abi.encodeWithSignature("shutdownSystem(address)", globalSettlement);
 
         pause.scheduleTransaction(target, codeHash, signature, earliestExecutionTime);
     }
 
-    function executeProposal() public { // exec
+    function executeProposal() public {
         require(!executed, "proposal-already-executed");
+
+        bytes memory signature =
+                abi.encodeWithSignature("shutdownSystem(address)", globalSettlement);
 
         pause.executeTransaction(target, codeHash, signature, earliestExecutionTime);
 
         executed = true;
     }
 }
-

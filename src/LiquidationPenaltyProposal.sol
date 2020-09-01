@@ -1,5 +1,3 @@
-// Copyright (C) 2019 Lorenzo Manacorda <lorenzo@mailbox.org>
-//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -21,33 +19,34 @@ abstract contract PauseLike {
     function executeTransaction(address, bytes32, bytes memory, uint256) public virtual;
 }
 
-contract MultiDebtCeilingProposal {
+contract LiquidationPenaltyProposal {
     PauseLike public pause;
     address   public target;
     bytes32   public codeHash;
     uint256   public earliestExecutionTime;
-    address   public safeEngine;
+    address   public liquidationEngine;
     bytes32[] public collateralTypes;
-    uint256[] public debtCeilings;
+    uint256[] public liquidationPenalties;
     bool      public executed;
 
     /**
-    * @notice Constructor, sets up proposal to change multiple collateral debtCeilings
+    * @notice Constructor, sets up proposal
     * @param _pause - DSPause
     * @param _target - govActions
-    * @param _safeEngine - final target of proposal
+    * @param _liquidationEngine - target of proposal
     * @param _collateralTypes - Array of types of collaterals
-    * @param _debtCeilings - Array of new debt ceilings
+    * @param _liquidationPenalties - Array of new liquidation penalties
     **/
-    constructor(address _pause, address _target, address _safeEngine, bytes32[] memory _collateralTypes, uint256[] memory _debtCeilings) public {
-        require(_collateralTypes.length == _debtCeilings.length, "mismatched lengths of collateralTypes, debtCeilings");
+    constructor(address _pause, address _target, address _liquidationEngine, bytes32[] memory _collateralTypes, uint256[] memory _liquidationPenalties) public {
+        require(_collateralTypes.length == _liquidationPenalties.length, 
+            "mismatched lengths of collateralTypes, _liquidationPenalties");
         require(_collateralTypes.length > 0, "no collateral types");
 
         pause = PauseLike(_pause);
         target  = _target;
-        safeEngine   = _safeEngine;
+        liquidationEngine   = _liquidationEngine;
         collateralTypes  = _collateralTypes;
-        debtCeilings = _debtCeilings;
+        liquidationPenalties = _liquidationPenalties;
         bytes32 _codeHash;
         assembly { _codeHash := extcodehash(_target) }
         codeHash = _codeHash;
@@ -61,10 +60,10 @@ contract MultiDebtCeilingProposal {
             bytes memory signature =
                 abi.encodeWithSignature(
                     "modifyParameters(address,bytes32,bytes32,uint256)",
-                    safeEngine,
+                    liquidationEngine,
                     collateralTypes[i],
-                    bytes32("debtCeiling"),
-                    debtCeilings[i]
+                    bytes32("liquidationPenalty"),
+                    liquidationPenalties[i]
             );
             pause.scheduleTransaction(target, codeHash, signature, earliestExecutionTime);
         }
@@ -77,10 +76,10 @@ contract MultiDebtCeilingProposal {
             bytes memory signature =
                 abi.encodeWithSignature(
                     "modifyParameters(address,bytes32,bytes32,uint256)",
-                    safeEngine,
+                    liquidationEngine,
                     collateralTypes[i],
-                    bytes32("debtCeiling"),
-                    debtCeilings[i]
+                    bytes32("liquidationPenalty"),
+                    liquidationPenalties[i]
             );
             pause.executeTransaction(target, codeHash, signature, earliestExecutionTime);
         }
