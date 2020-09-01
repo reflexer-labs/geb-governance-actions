@@ -24,7 +24,7 @@ This repository includes several pre-made proposals (check unit tests for exampl
 - AccessManagement: grant or revoke any access within GEB
 - CollateralStabilityFee: change the stability fee of one or more collateralTypes
 - DebtCeilingProposal: change debt ceiling for a single collateralType
-- FixedDiscountAuctionHouse: change any of the parameters
+- FixedDiscountCollateralAuctionHouse: change any of the parameters
 - GlobalAuctionParamsProposal: change global auction parameters (initialDebtMintedTokens, debtAuctionBidSize)
 - LiquidationCRatio: change liquidation collateralization ratio for one or more collateralTypes
 - LiquidationPenalty: change liquidation penalty for one or more collateralTypes
@@ -32,5 +32,3 @@ This repository includes several pre-made proposals (check unit tests for exampl
 - NewCollateral: add a new collateral to the system
 - SafetyCRatio: change safety collateralization ratio for one or more collateralTypes
 - SecondaryTaxReceivers: add or remove one or more secondary tax receivers. Also use to edit the tax percentages
-
-

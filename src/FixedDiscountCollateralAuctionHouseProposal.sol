@@ -12,13 +12,13 @@ abstract contract ConfigLike {
 }
 
 contract Proposal {
-    function deploy(address fixedDiscountAuctionHouse, bytes32[] calldata parameters, bytes32[] calldata data) external {
+    function deploy(address FixedDiscountCollateralAuctionHouse, bytes32[] calldata parameters, bytes32[] calldata data) external {
 
         for (uint i = 0; i < parameters.length; i++) 
         if (isAddress(parameters[i]))
-            ConfigLike(fixedDiscountAuctionHouse).modifyParameters(parameters[i], address(uint160(uint256(data[i]))) ); 
+            ConfigLike(FixedDiscountCollateralAuctionHouse).modifyParameters(parameters[i], address(uint160(uint256(data[i]))) ); 
         else
-            ConfigLike(fixedDiscountAuctionHouse).modifyParameters(parameters[i], uint256(data[i])); 
+            ConfigLike(FixedDiscountCollateralAuctionHouse).modifyParameters(parameters[i], uint256(data[i])); 
     }
 
     function isAddress(bytes32 param) public pure returns (bool) {
@@ -43,17 +43,17 @@ contract FixedDiscountCollateralAuctionHouseProposal {
     /**
     * @notice Constructor, sets up proposal
     * @param _pause - DSPause
-    * @param fixedDiscountAuctionHouse - fixedDiscountAuctionHouse
+    * @param FixedDiscountCollateralAuctionHouse - FixedDiscountCollateralAuctionHouse
     * @param parameters - parameters to change
     * @param data - New values (convert both uint and addresses to bytes32)
     **/
-    constructor(address _pause, address fixedDiscountAuctionHouse, bytes32[] memory parameters, bytes32[] memory data) public {
+    constructor(address _pause, address FixedDiscountCollateralAuctionHouse, bytes32[] memory parameters, bytes32[] memory data) public {
         require(parameters.length == data.length, "mismatched lengths of parameters, data");
         require(parameters.length > 0, "no collateral types");
 
         pause = _pause;
         address deployer = address(new Proposal());
-        signature = abi.encodeWithSignature("deploy(address,bytes32[],bytes32[])", fixedDiscountAuctionHouse, parameters, data);
+        signature = abi.encodeWithSignature("deploy(address,bytes32[],bytes32[])", FixedDiscountCollateralAuctionHouse, parameters, data);
         bytes32 _codeHash; assembly { _codeHash := extcodehash(deployer) }
         proposal = deployer;
         codeHash = _codeHash;
