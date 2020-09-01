@@ -16,10 +16,10 @@ pragma solidity >=0.6.7;
 import "ds-test/test.sol";
 import "geb-deploy/test/GebDeploy.t.base.sol";
 
-import "../FixedDiscountAuctionHouseProposal.sol";
+import "../FixedDiscountCollateralAuctionHouseProposal.sol";
 
-contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
-    FixedDiscountAuctionHouseProposal proposal;
+contract FixedDiscountCollateralAuctionHouseProposalTest is GebDeployTestBase {
+    FixedDiscountCollateralAuctionHouseProposal proposal;
     bytes32[] parameters;
     bytes32[] values;
     uint256 earliestExecutionTime;
@@ -39,7 +39,7 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
         parameters  = [ bytes32("discount"), bytes32("lowerCollateralMedianDeviation") ];
         values = [ bytes32(uint(1 ether)), bytes32(uint(0.9 ether))];
 
-        proposal = new FixedDiscountAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
+        proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
 
         bytes memory signature = abi.encodeWithSignature("deploy(address,bytes32[],bytes32[])", address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         assertEq(keccak256(proposal.signature()), keccak256(signature));
@@ -51,11 +51,11 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
     }
 
     function testFailProposalEmptyParams() public {
-        values = [ 
-            bytes32(uint(0.9 ether)), 
+        values = [
+            bytes32(uint(0.9 ether)),
             bytes32(uint(0.8 ether))];
 
-        proposal = new FixedDiscountAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
+        proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -64,12 +64,12 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
     }
 
     function testFailProposalEmptyData() public {
-        parameters  = [ 
-            bytes32("discount"), 
+        parameters  = [
+            bytes32("discount"),
             bytes32("lowerCollateralMedianDeviation"),
             bytes32("upperCollateralMedianDeviation")];
 
-        proposal = new FixedDiscountAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
+        proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -78,7 +78,7 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
     }
 
     function testFailProposalBothEmpty() public {
-        proposal = new FixedDiscountAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
+        proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -87,15 +87,15 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
     }
 
     function testFailProposalMismatchedLengths() public {
-        parameters  = [ 
-            bytes32("discount"), 
+        parameters  = [
+            bytes32("discount"),
             bytes32("lowerCollateralMedianDeviation"),
             bytes32("upperCollateralMedianDeviation")];
-        values = [ 
-            bytes32(uint(0.9 ether)), 
+        values = [
+            bytes32(uint(0.9 ether)),
             bytes32(uint(0.8 ether))];
 
-        proposal = new FixedDiscountAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
+        proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -104,8 +104,8 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
     }
 
     function testFixedDiscountAuctionParameterProposalExecution() public {
-        parameters  = [ 
-            bytes32("discount"), 
+        parameters  = [
+            bytes32("discount"),
             bytes32("lowerCollateralMedianDeviation"),
             bytes32("upperCollateralMedianDeviation"),
             bytes32("lowerSystemCoinMedianDeviation"),
@@ -113,19 +113,19 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
             bytes32("minSystemCoinMedianDeviation"),
             bytes32("minimumBid"),
             bytes32("totalAuctionLength"),
-            bytes32("oracleRelayer"),  
-            bytes32("collateralOSM"),  
-            bytes32("collateralMedian"),  
+            bytes32("oracleRelayer"),
+            bytes32("collateralOSM"),
+            bytes32("collateralMedian"),
             bytes32("systemCoinOracle"),
             bytes32("liquidationEngine") ];
-        values = [ 
-            bytes32(uint(0.9 ether)), 
+        values = [
+            bytes32(uint(0.9 ether)),
             bytes32(uint(0.8 ether)),
-            bytes32(uint(0.7 ether)), 
-            bytes32(uint(0.6 ether)), 
-            bytes32(uint(0.5 ether)), 
-            bytes32(uint(0.4 ether)), 
-            bytes32(uint(0.3 ether)), 
+            bytes32(uint(0.7 ether)),
+            bytes32(uint(0.6 ether)),
+            bytes32(uint(0.5 ether)),
+            bytes32(uint(0.4 ether)),
+            bytes32(uint(0.3 ether)),
             bytes32(uint(1 days)),
             bytes32(uint256(0x0c1E0001714F516c232dEbE2bB0E9876f679470E) << 96),
             bytes32(uint256(0xC0114E6858312EFebDd243D4a7daaFd6a099F4cA) << 96),
@@ -133,7 +133,7 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
             bytes32(uint256(0xC012002dCbcFC7486C97c67412181cbd9A662ab7) << 96),
             bytes32(uint256(0x1101dA48A3f269618e068837f3ae5EB9a5b49F67) << 96)];
 
-        proposal = new FixedDiscountAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
+        proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -154,20 +154,20 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
         assertEq(address(ethFixedDiscountCollateralAuctionHouse.collateralMedian()), address(uint160(uint256(values[10]))) );
         assertEq(address(ethFixedDiscountCollateralAuctionHouse.systemCoinOracle()), address(uint160(uint256(values[11]))) );
         assertEq(address(ethFixedDiscountCollateralAuctionHouse.liquidationEngine()), address(uint160(uint256(values[12]))) );
-        
+
     }
 
     function testFailRepeatedProposalExecution() public {
-        parameters  = [ 
-            bytes32("discount"), 
+        parameters  = [
+            bytes32("discount"),
             bytes32("lowerCollateralMedianDeviation"),
             bytes32("totalAuctionLength") ];
-        values = [ 
-            bytes32(uint(0.9 ether)), 
+        values = [
+            bytes32(uint(0.9 ether)),
             bytes32(uint(0.8 ether)),
             bytes32(uint(1 days))];
 
-        proposal = new FixedDiscountAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
+        proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + earliestExecutionTime);
@@ -177,16 +177,16 @@ contract FixedDiscountAuctionHouseProposalTest is GebDeployTestBase {
     }
 
     function testFailProposalExpired() public {
-        parameters  = [ 
-            bytes32("discount"), 
+        parameters  = [
+            bytes32("discount"),
             bytes32("lowerCollateralMedianDeviation"),
             bytes32("totalAuctionLength") ];
-        values = [ 
-            bytes32(uint(0.9 ether)), 
+        values = [
+            bytes32(uint(0.9 ether)),
             bytes32(uint(0.8 ether)),
             bytes32(uint(1 days))];
 
-        proposal = new FixedDiscountAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
+        proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         setUpAccess();
         proposal.scheduleProposal();
         hevm.warp(now + 30 days);

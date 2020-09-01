@@ -31,7 +31,7 @@ contract Proposal {
     }
 }
 
-contract FixedDiscountAuctionHouseProposal {
+contract FixedDiscountCollateralAuctionHouseProposal {
     bool      public executed;
     address   public pause;
     address   public proposal;
