@@ -26,7 +26,7 @@ contract CollateralStabilityFeeProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployIndex("");
         earliestExecutionTime = pause.delay();
     }
 

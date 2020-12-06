@@ -23,7 +23,7 @@ contract Proposal {
 
     function isAddress(bytes32 param) public pure returns (bool) {
         if  ( param == bytes32("oracleRelayer")    ||
-              param == bytes32("collateralOSM")    ||
+              param == bytes32("collateralFSM")    ||
               param == bytes32("collateralMedian") ||  
               param == bytes32("systemCoinOracle") ||
               param == bytes32("liquidationEngine") )

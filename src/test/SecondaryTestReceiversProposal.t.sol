@@ -28,7 +28,7 @@ contract SecondaryTaxReceiversProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployIndex("");
         earliestExecutionTime = pause.delay();
 
         // raising secondaryTxReceiver limit from 1

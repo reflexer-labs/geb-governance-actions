@@ -15,6 +15,7 @@ contract NewCollateralProposalEnglishAuctionTest is GebDeployTestBase {
     NewCollateralProposal proposal;
 
     bytes32 constant collateralType = "NCT";
+    string constant collateralName  = "NCT";
     DSToken nctToken;
     BasicCollateralJoin nctBasicCollateralJoin;
     EnglishCollateralAuctionHouse nctBasicCollateralAuctionHouse;
@@ -22,19 +23,17 @@ contract NewCollateralProposalEnglishAuctionTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployIndex("");
 
-        nctToken = new DSToken(collateralType);
+        nctToken = new DSToken(collateralName, collateralName);
         nctToken.mint(1 ether);
         nctBasicCollateralJoin = new BasicCollateralJoin(address(safeEngine), collateralType, address(nctToken));
         nctOrcl = new DSValue();
         nctOrcl.updateResult(uint(300 ether));
         nctBasicCollateralAuctionHouse = englishCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), collateralType);
 
-        
-        nctBasicCollateralAuctionHouse.modifyParameters("osm", address(nctOrcl));
-        nctBasicCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
         nctBasicCollateralAuctionHouse.modifyParameters("bidDuration", pause.delay());
+        nctBasicCollateralAuctionHouse.modifyParameters("totalAuctionLength", 6 hours);
 
         nctBasicCollateralAuctionHouse.addAuthorization(address(pause.proxy()));
         nctBasicCollateralAuctionHouse.removeAuthorization(address(this));
@@ -64,7 +63,7 @@ contract NewCollateralProposalEnglishAuctionTest is GebDeployTestBase {
 
         authority.setRootUser(address(proposal), true);
 
-        proposal.scheduleProposal(); 
+        proposal.scheduleProposal();
         proposal.executeProposal();
 
         nctToken.approve(address(nctBasicCollateralJoin), 1 ether);
@@ -141,30 +140,29 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
     NewCollateralProposal proposal;
 
     bytes32 constant collateralType = "NCT";
+    string constant collateralName  = "NCT";
     DSToken nctToken;
     BasicCollateralJoin nctBasicCollateralJoin;
-    FixedDiscountCollateralAuctionHouse nctBasicCollateralAuctionHouse;
+    FixedDiscountCollateralAuctionHouse nctFixedDiscountCollateralAuctionHouse;
     DSValue nctOrcl;
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployIndex("");
 
-        nctToken = new DSToken(collateralType);
+        nctToken = new DSToken(collateralName, collateralName);
         nctToken.mint(1 ether);
         nctBasicCollateralJoin = new BasicCollateralJoin(address(safeEngine), collateralType, address(nctToken));
         nctOrcl = new DSValue();
         nctOrcl.updateResult(uint(300 ether));
-        nctBasicCollateralAuctionHouse = fixedDiscountCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), collateralType);
+        nctFixedDiscountCollateralAuctionHouse = fixedDiscountCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), collateralType);
 
-        
-        nctBasicCollateralAuctionHouse.modifyParameters("minimumBid", 0.01 ether);
-        nctBasicCollateralAuctionHouse.modifyParameters("collateralOSM", address(nctOrcl));
-        nctBasicCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
-        nctBasicCollateralAuctionHouse.modifyParameters("totalAuctionLength", 6 hours);
+        nctFixedDiscountCollateralAuctionHouse.modifyParameters("minimumBid", 0.01 ether);
+        nctFixedDiscountCollateralAuctionHouse.modifyParameters("collateralFSM", address(nctOrcl));
+        nctFixedDiscountCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
 
-        nctBasicCollateralAuctionHouse.addAuthorization(address(pause.proxy()));
-        nctBasicCollateralAuctionHouse.removeAuthorization(address(this));
+        nctFixedDiscountCollateralAuctionHouse.addAuthorization(address(pause.proxy()));
+        nctFixedDiscountCollateralAuctionHouse.removeAuthorization(address(this));
 
         proposal = new NewCollateralProposal(
             collateralType,
@@ -177,7 +175,7 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
                 address(globalSettlement),
                 address(nctBasicCollateralJoin),
                 address(nctOrcl),
-                address(nctBasicCollateralAuctionHouse)
+                address(nctFixedDiscountCollateralAuctionHouse)
             ],
             [
                 uint256(10000 * 10 ** 45), // debtCeiling [rad]
@@ -191,7 +189,7 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
 
         authority.setRootUser(address(proposal), true);
 
-        proposal.scheduleProposal(); 
+        proposal.scheduleProposal();
         proposal.executeProposal();
 
         nctToken.approve(address(nctBasicCollateralJoin), 1 ether);
@@ -207,11 +205,11 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
         (uint tax,) = taxCollector.collateralTypes(collateralType);
         assertEq(tax, uint(1.05 * 10 ** 27));
         (address auction, uint liquidationPenalty, uint liquidationQuantity) = liquidationEngine.collateralTypes(collateralType);
-        assertEq(auction, address(nctBasicCollateralAuctionHouse));
+        assertEq(auction, address(nctFixedDiscountCollateralAuctionHouse));
         assertEq(liquidationPenalty, 1 ether);
         assertEq(liquidationQuantity, uint(10000 * 10 ** 45));
         assertEq(safeEngine.authorizedAccounts(address(nctBasicCollateralJoin)), 1);
-        assertEq(liquidationEngine.authorizedAccounts(address(nctBasicCollateralAuctionHouse)), 1);
+        assertEq(liquidationEngine.authorizedAccounts(address(nctFixedDiscountCollateralAuctionHouse)), 1);
     }
 
     function testModifySAFECollateralization() public {
@@ -233,11 +231,11 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
         safeEngine.modifySAFECollateralization(collateralType, address(this), address(this), address(this), 1 ether, 200 ether); // Maximun RAI generated
         nctOrcl.updateResult(uint(300 ether - 1)); // Decrease price in 1 wei
         oracleRelayer.updateCollateralPrice(collateralType);
-        assertEq(safeEngine.tokenCollateral(collateralType, address(nctBasicCollateralAuctionHouse)), 0);
+        assertEq(safeEngine.tokenCollateral(collateralType, address(nctFixedDiscountCollateralAuctionHouse)), 0);
 
         uint batchId = liquidationEngine.liquidateSAFE(collateralType, address(this));
-        (,,uint amountToSell,uint amountToRaise,,,) = nctBasicCollateralAuctionHouse.bids(batchId);
-        assertEq(safeEngine.tokenCollateral(collateralType, address(nctBasicCollateralAuctionHouse)), amountToSell);
+        (,,uint amountToSell,uint amountToRaise,,,) = nctFixedDiscountCollateralAuctionHouse.bids(batchId);
+        assertEq(safeEngine.tokenCollateral(collateralType, address(nctFixedDiscountCollateralAuctionHouse)), amountToSell);
 
         address(user1).transfer(10 ether);
         user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
@@ -247,15 +245,15 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
         user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
         user2.doModifySAFECollateralization(address(safeEngine), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
 
-        user1.doSAFEApprove(address(safeEngine), address(nctBasicCollateralAuctionHouse));
-        user2.doSAFEApprove(address(safeEngine), address(nctBasicCollateralAuctionHouse));
+        user1.doSAFEApprove(address(safeEngine), address(nctFixedDiscountCollateralAuctionHouse));
+        user2.doSAFEApprove(address(safeEngine), address(nctFixedDiscountCollateralAuctionHouse));
 
-        user1.doBuyCollateral(address(nctBasicCollateralAuctionHouse), batchId, 0.1 ether);
-        user2.doBuyCollateral(address(nctBasicCollateralAuctionHouse), batchId, 0.2 ether);
-        user1.doBuyCollateral(address(nctBasicCollateralAuctionHouse), batchId, 0.3 ether);
-        user2.doBuyCollateral(address(nctBasicCollateralAuctionHouse), batchId, 3 ether);
+        user1.doBuyCollateral(address(nctFixedDiscountCollateralAuctionHouse), batchId, 0.1 ether);
+        user2.doBuyCollateral(address(nctFixedDiscountCollateralAuctionHouse), batchId, 0.2 ether);
+        user1.doBuyCollateral(address(nctFixedDiscountCollateralAuctionHouse), batchId, 0.3 ether);
+        user2.doBuyCollateral(address(nctFixedDiscountCollateralAuctionHouse), batchId, 3 ether);
 
-        assertEq(nctBasicCollateralAuctionHouse.remainingAmountToSell(batchId), 0);
-        assertEq(nctBasicCollateralAuctionHouse.amountToRaise(batchId), 0);
+        assertEq(nctFixedDiscountCollateralAuctionHouse.remainingAmountToSell(batchId), 0);
+        assertEq(nctFixedDiscountCollateralAuctionHouse.amountToRaise(batchId), 0);
     }
 }

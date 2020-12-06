@@ -26,7 +26,7 @@ contract FixedDiscountCollateralAuctionHouseProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployIndex("");
         earliestExecutionTime = pause.delay();
     }
 
@@ -112,9 +112,8 @@ contract FixedDiscountCollateralAuctionHouseProposalTest is GebDeployTestBase {
             bytes32("upperSystemCoinMedianDeviation"),
             bytes32("minSystemCoinMedianDeviation"),
             bytes32("minimumBid"),
-            bytes32("totalAuctionLength"),
             bytes32("oracleRelayer"),
-            bytes32("collateralOSM"),
+            bytes32("collateralFSM"),
             bytes32("collateralMedian"),
             bytes32("systemCoinOracle"),
             bytes32("liquidationEngine") ];
@@ -126,7 +125,6 @@ contract FixedDiscountCollateralAuctionHouseProposalTest is GebDeployTestBase {
             bytes32(uint(0.5 ether)),
             bytes32(uint(0.4 ether)),
             bytes32(uint(0.3 ether)),
-            bytes32(uint(1 days)),
             bytes32(uint256(0x0c1E0001714F516c232dEbE2bB0E9876f679470E) << 96),
             bytes32(uint256(0xC0114E6858312EFebDd243D4a7daaFd6a099F4cA) << 96),
             bytes32(uint256(0xC0119E22E56428d0679ceC82Fbff608c9D3Fa7bf) << 96),
@@ -147,25 +145,21 @@ contract FixedDiscountCollateralAuctionHouseProposalTest is GebDeployTestBase {
         assertEq(ethFixedDiscountCollateralAuctionHouse.upperSystemCoinMedianDeviation(), uint(values[4]));
         assertEq(ethFixedDiscountCollateralAuctionHouse.minSystemCoinMedianDeviation(), uint(values[5]));
         assertEq(ethFixedDiscountCollateralAuctionHouse.minimumBid(), uint(values[6]));
-        assertEq(ethFixedDiscountCollateralAuctionHouse.totalAuctionLength(), uint(values[7]));
 
-        assertEq(address(ethFixedDiscountCollateralAuctionHouse.oracleRelayer()), address(uint160(uint256(values[8]))) );
-        assertEq(address(ethFixedDiscountCollateralAuctionHouse.collateralOSM()), address(uint160(uint256(values[9]))) );
-        assertEq(address(ethFixedDiscountCollateralAuctionHouse.collateralMedian()), address(uint160(uint256(values[10]))) );
-        assertEq(address(ethFixedDiscountCollateralAuctionHouse.systemCoinOracle()), address(uint160(uint256(values[11]))) );
-        assertEq(address(ethFixedDiscountCollateralAuctionHouse.liquidationEngine()), address(uint160(uint256(values[12]))) );
-
+        assertEq(address(ethFixedDiscountCollateralAuctionHouse.oracleRelayer()), address(uint160(uint256(values[7]))) );
+        assertEq(address(ethFixedDiscountCollateralAuctionHouse.collateralFSM()), address(uint160(uint256(values[8]))) );
+        assertEq(address(ethFixedDiscountCollateralAuctionHouse.collateralMedian()), address(uint160(uint256(values[9]))) );
+        assertEq(address(ethFixedDiscountCollateralAuctionHouse.systemCoinOracle()), address(uint160(uint256(values[10]))) );
+        assertEq(address(ethFixedDiscountCollateralAuctionHouse.liquidationEngine()), address(uint160(uint256(values[11]))) );
     }
 
     function testFailRepeatedProposalExecution() public {
         parameters  = [
             bytes32("discount"),
-            bytes32("lowerCollateralMedianDeviation"),
-            bytes32("totalAuctionLength") ];
+            bytes32("lowerCollateralMedianDeviation") ];
         values = [
             bytes32(uint(0.9 ether)),
-            bytes32(uint(0.8 ether)),
-            bytes32(uint(1 days))];
+            bytes32(uint(0.8 ether))];
 
         proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         setUpAccess();
@@ -179,12 +173,10 @@ contract FixedDiscountCollateralAuctionHouseProposalTest is GebDeployTestBase {
     function testFailProposalExpired() public {
         parameters  = [
             bytes32("discount"),
-            bytes32("lowerCollateralMedianDeviation"),
-            bytes32("totalAuctionLength") ];
+            bytes32("lowerCollateralMedianDeviation") ];
         values = [
             bytes32(uint(0.9 ether)),
-            bytes32(uint(0.8 ether)),
-            bytes32(uint(1 days))];
+            bytes32(uint(0.8 ether))];
 
         proposal = new FixedDiscountCollateralAuctionHouseProposal(address(pause), address(ethFixedDiscountCollateralAuctionHouse), parameters, values);
         setUpAccess();
