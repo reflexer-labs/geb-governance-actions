@@ -14,17 +14,16 @@ abstract contract ConfigLike {
 contract Proposal {
     function deploy(address FixedDiscountCollateralAuctionHouse, bytes32[] calldata parameters, bytes32[] calldata data) external {
 
-        for (uint i = 0; i < parameters.length; i++) 
+        for (uint i = 0; i < parameters.length; i++)
         if (isAddress(parameters[i]))
-            ConfigLike(FixedDiscountCollateralAuctionHouse).modifyParameters(parameters[i], address(uint160(uint256(data[i]))) ); 
+            ConfigLike(FixedDiscountCollateralAuctionHouse).modifyParameters(parameters[i], address(uint160(uint256(data[i]))) );
         else
-            ConfigLike(FixedDiscountCollateralAuctionHouse).modifyParameters(parameters[i], uint256(data[i])); 
+            ConfigLike(FixedDiscountCollateralAuctionHouse).modifyParameters(parameters[i], uint256(data[i]));
     }
 
     function isAddress(bytes32 param) public pure returns (bool) {
         if  ( param == bytes32("oracleRelayer")    ||
               param == bytes32("collateralFSM")    ||
-              param == bytes32("collateralMedian") ||  
               param == bytes32("systemCoinOracle") ||
               param == bytes32("liquidationEngine") )
             return true;
