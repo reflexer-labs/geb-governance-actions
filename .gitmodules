@@ -13,3 +13,6 @@
 [submodule "lib/ds-value"]
 	path = lib/ds-value
 	url = https://github.com/reflexer-labs/ds-value.git
+[submodule "lib/geb-collateral-auction-throttler"]
+	path = lib/geb-collateral-auction-throttler
+	url = https://github.com/reflexer-labs/geb-collateral-auction-throttler.git
