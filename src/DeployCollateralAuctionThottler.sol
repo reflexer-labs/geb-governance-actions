@@ -1,4 +1,4 @@
-pragma solidity ^0.6.7;
+pragma solidity 0.6.7;
 
 import {CollateralAuctionThrottler} from "geb-collateral-auction-throttler/CollateralAuctionThrottler.sol";
 
@@ -12,18 +12,46 @@ abstract contract StabilityFeeTreasuryLike {
 }
 
 contract DeployCollateralAuctionThottler {
-    function execute(
+    bool      public executed;
+
+    uint256   public updateDelay;
+    uint256   public backupUpdateDelay;
+    uint256   public maxRewardIncreaseDelay;
+    uint256   public baseUpdateCallerReward;
+    uint256   public maxUpdateCallerReward;
+    uint256   public perSecondCallerRewardIncrease;
+    uint256   public globalDebtPercentage;
+
+    address[] public surplusHolders;
+
+    constructor(
+        uint256 updateDelay_,
+        uint256 backupUpdateDelay_,
+        uint256 maxRewardIncreaseDelay_,
+        uint256 baseUpdateCallerReward_,
+        uint256 maxUpdateCallerReward_,
+        uint256 perSecondCallerRewardIncrease_,
+        uint256 globalDebtPercentage_,
+        address[] memory surplusHolders_
+    ) public {
+        updateDelay                   = updateDelay_;
+        backupUpdateDelay             = backupUpdateDelay_;
+        maxRewardIncreaseDelay        = maxRewardIncreaseDelay_;
+        baseUpdateCallerReward        = baseUpdateCallerReward_;
+        maxUpdateCallerReward         = maxUpdateCallerReward_;
+        perSecondCallerRewardIncrease = perSecondCallerRewardIncrease_;
+        globalDebtPercentage          = globalDebtPercentage_;
+
+        surplusHolders                = surplusHolders_;
+    }
+
+    function executeProposal(
         address _safeEngine,
         address _liquidationEngine,
         address _treasury
-    ) public  returns (address) {
-        uint256 updateDelay                   = 6 hours;
-        uint256 backupUpdateDelay             = 7 hours;
-        uint256 baseUpdateCallerReward        = 5 ether;
-        uint256 maxUpdateCallerReward         = 10 ether;
-        uint256 perSecondCallerRewardIncrease = 1000192559420674483977255848;
-        uint256 globalDebtPercentage          = 25;
-        address[] memory surplusHolders; // empty
+    ) public returns (address) {
+        require(!executed, "proposal-already-executed");
+        executed = true;
 
         // deploy the throttler
         CollateralAuctionThrottler throttler = new CollateralAuctionThrottler(
@@ -40,13 +68,13 @@ contract DeployCollateralAuctionThottler {
         );
 
         // setting maxRewardIncreaseDelay
-        throttler.modifyParameters("maxRewardIncreaseDelay", 6 hours);
+        throttler.modifyParameters("maxRewardIncreaseDelay", maxRewardIncreaseDelay);
 
-        // setting allowances on treasury
-        StabilityFeeTreasuryLike(_treasury).setPerBlockAllowance(address(throttler), 10 ** 46); // 10 RAD
-        StabilityFeeTreasuryLike(_treasury).setTotalAllowance(address(throttler), uint(-1));    // unlimited    
+        // setting allowances in the SF treasury
+        StabilityFeeTreasuryLike(_treasury).setPerBlockAllowance(address(throttler), maxUpdateCallerReward * RAY);
+        StabilityFeeTreasuryLike(_treasury).setTotalAllowance(address(throttler), uint(-1));
 
-        // auth throttler in liquidationEngine
+        // auth throttler in LiquidationEngine
         LiquidationEngineLike(_liquidationEngine).addAuthorization(address(throttler));
 
         return address(throttler);

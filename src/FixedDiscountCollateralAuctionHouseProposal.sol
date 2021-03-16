@@ -47,7 +47,7 @@ contract FixedDiscountCollateralAuctionHouseProposal {
     * @param data - New values (convert both uint and addresses to bytes32)
     **/
     constructor(address _pause, address FixedDiscountCollateralAuctionHouse, bytes32[] memory parameters, bytes32[] memory data) public {
-        require(parameters.length == data.length, "mismatched lengths of parameters, data");
+        require(parameters.length == data.length, "mismatched array lengths");
         require(parameters.length > 0, "no collateral types");
 
         pause = _pause;
