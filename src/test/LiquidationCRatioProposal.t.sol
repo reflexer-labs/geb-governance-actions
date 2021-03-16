@@ -26,7 +26,7 @@ contract LiquidationCRatioProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployStable("");
         earliestExecutionTime = pause.delay();
 
         // raising safetyCRatio from 0 (has to be larger than liquidationCRatio)

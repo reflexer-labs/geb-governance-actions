@@ -13,7 +13,7 @@ contract GlobalStabilityFeeProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployStable("");
 
         proposal = new GlobalStabilityFeeProposal(
             address(pause),

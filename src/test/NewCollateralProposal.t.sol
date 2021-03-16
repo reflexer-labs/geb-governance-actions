@@ -22,18 +22,15 @@ contract NewCollateralProposalEnglishAuctionTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployStable("");
 
-        nctToken = new DSToken(collateralType);
+        nctToken = new DSToken("NCT", "NCT");
         nctToken.mint(1 ether);
         nctBasicCollateralJoin = new BasicCollateralJoin(address(safeEngine), collateralType, address(nctToken));
         nctOrcl = new DSValue();
         nctOrcl.updateResult(uint(300 ether));
         nctBasicCollateralAuctionHouse = englishCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), collateralType);
 
-        
-        nctBasicCollateralAuctionHouse.modifyParameters("osm", address(nctOrcl));
-        nctBasicCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
         nctBasicCollateralAuctionHouse.modifyParameters("bidDuration", pause.delay());
 
         nctBasicCollateralAuctionHouse.addAuthorization(address(pause.proxy()));
@@ -148,9 +145,9 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployStable("");
 
-        nctToken = new DSToken(collateralType);
+        nctToken = new DSToken("NCT", "NCT");
         nctToken.mint(1 ether);
         nctBasicCollateralJoin = new BasicCollateralJoin(address(safeEngine), collateralType, address(nctToken));
         nctOrcl = new DSValue();
@@ -159,9 +156,8 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
 
         
         nctBasicCollateralAuctionHouse.modifyParameters("minimumBid", 0.01 ether);
-        nctBasicCollateralAuctionHouse.modifyParameters("collateralOSM", address(nctOrcl));
+        nctBasicCollateralAuctionHouse.modifyParameters("collateralFSM", address(nctOrcl));
         nctBasicCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
-        nctBasicCollateralAuctionHouse.modifyParameters("totalAuctionLength", 6 hours);
 
         nctBasicCollateralAuctionHouse.addAuthorization(address(pause.proxy()));
         nctBasicCollateralAuctionHouse.removeAuthorization(address(this));

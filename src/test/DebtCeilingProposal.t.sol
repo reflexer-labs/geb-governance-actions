@@ -33,7 +33,7 @@ contract DebtCeilingProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployStable("");
         proposalDelay = pause.delay();
     }
 

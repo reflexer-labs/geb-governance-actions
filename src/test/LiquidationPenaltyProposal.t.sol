@@ -26,7 +26,7 @@ contract MultiDebtCeilingProposalTest is GebDeployTestBase {
 
     function setUp() public override {
         super.setUp();
-        deployBond("");
+        deployStable("");
         earliestExecutionTime = pause.delay();
     }
 
