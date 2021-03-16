@@ -4,9 +4,6 @@
 [submodule "lib/geb-deploy"]
 	path = lib/geb-deploy
 	url = https://github.com/reflexer-labs/geb-deploy.git
-[submodule "lib/ds-exec"]
-	path = lib/ds-exec
-	url = https://github.com/reflexer-labs/ds-exec.git
 [submodule "lib/ds-value"]
 	path = lib/ds-value
 	url = https://github.com/reflexer-labs/ds-value.git
