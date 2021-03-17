@@ -18,32 +18,13 @@ contract DeployCollateralAuctionThottlerTest is DSTest {
     LiquidationEngine liquidationEngine;
     MockTreasury treasury;
 
-    // Params
-    uint256 updateDelay                   = 6 hours;
-    uint256 backupUpdateDelay             = 7 hours;
-    uint256 baseUpdateCallerReward        = 5 ether;
-    uint256 maxUpdateCallerReward         = 10 ether;
-    uint256 perSecondCallerRewardIncrease = 1000192559420674483977255848;
-    uint256 globalDebtPercentage          = 25;
-
-    address[]  surplusHolders;
-
     function setUp() public {
-
         systemCoin        = new DSToken("RAI", "RAI");
         safeEngine        = new SAFEEngine();
         liquidationEngine = new LiquidationEngine(address(safeEngine));
         treasury          = new MockTreasury(address(systemCoin));
 
-        deployProxy = new DeployCollateralAuctionThottler(
-            updateDelay,
-            backupUpdateDelay,
-            baseUpdateCallerReward,
-            maxUpdateCallerReward,
-            perSecondCallerRewardIncrease,
-            globalDebtPercentage,
-            surplusHolders
-        );
+        deployProxy = new DeployCollateralAuctionThottler();
     }
 
     function test_execute() public {
