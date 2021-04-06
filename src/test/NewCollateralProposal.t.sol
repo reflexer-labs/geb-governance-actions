@@ -143,7 +143,7 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
     string constant collateralName  = "NCT";
     DSToken nctToken;
     BasicCollateralJoin nctBasicCollateralJoin;
-    FixedDiscountCollateralAuctionHouse nctFixedDiscountCollateralAuctionHouse;
+    IncreasingDiscountCollateralAuctionHouse nctIncreasingDiscountCollateralAuctionHouse;
     DSValue nctOrcl;
 
     function setUp() public override {
@@ -155,14 +155,14 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
         nctBasicCollateralJoin = new BasicCollateralJoin(address(safeEngine), collateralType, address(nctToken));
         nctOrcl = new DSValue();
         nctOrcl.updateResult(uint(300 ether));
-        nctFixedDiscountCollateralAuctionHouse = fixedDiscountCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), collateralType);
+        nctIncreasingDiscountCollateralAuctionHouse = increasingDiscountCollateralAuctionHouseFactory.newCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), collateralType);
 
-        nctFixedDiscountCollateralAuctionHouse.modifyParameters("minimumBid", 0.01 ether);
-        nctFixedDiscountCollateralAuctionHouse.modifyParameters("collateralFSM", address(nctOrcl));
-        nctFixedDiscountCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
+        nctIncreasingDiscountCollateralAuctionHouse.modifyParameters("minimumBid", 0.01 ether);
+        nctIncreasingDiscountCollateralAuctionHouse.modifyParameters("collateralFSM", address(nctOrcl));
+        nctIncreasingDiscountCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
 
-        nctFixedDiscountCollateralAuctionHouse.addAuthorization(address(pause.proxy()));
-        nctFixedDiscountCollateralAuctionHouse.removeAuthorization(address(this));
+        nctIncreasingDiscountCollateralAuctionHouse.addAuthorization(address(pause.proxy()));
+        nctIncreasingDiscountCollateralAuctionHouse.removeAuthorization(address(this));
 
         proposal = new NewCollateralProposal(
             collateralType,
@@ -175,7 +175,7 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
                 address(globalSettlement),
                 address(nctBasicCollateralJoin),
                 address(nctOrcl),
-                address(nctFixedDiscountCollateralAuctionHouse)
+                address(nctIncreasingDiscountCollateralAuctionHouse)
             ],
             [
                 uint256(10000 * 10 ** 45), // debtCeiling [rad]
@@ -205,11 +205,11 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
         (uint tax,) = taxCollector.collateralTypes(collateralType);
         assertEq(tax, uint(1.05 * 10 ** 27));
         (address auction, uint liquidationPenalty, uint liquidationQuantity) = liquidationEngine.collateralTypes(collateralType);
-        assertEq(auction, address(nctFixedDiscountCollateralAuctionHouse));
+        assertEq(auction, address(nctIncreasingDiscountCollateralAuctionHouse));
         assertEq(liquidationPenalty, 1 ether);
         assertEq(liquidationQuantity, uint(10000 * 10 ** 45));
         assertEq(safeEngine.authorizedAccounts(address(nctBasicCollateralJoin)), 1);
-        assertEq(liquidationEngine.authorizedAccounts(address(nctFixedDiscountCollateralAuctionHouse)), 1);
+        assertEq(liquidationEngine.authorizedAccounts(address(nctIncreasingDiscountCollateralAuctionHouse)), 1);
     }
 
     function testModifySAFECollateralization() public {
@@ -223,7 +223,7 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
         assertEq(coin.balanceOf(address(this)), 100 ether);
     }
 
-    function testFixedDiscountAuction() public {
+    function testIncreasingDiscountAuction() public {
         this.modifyParameters(address(liquidationEngine), collateralType, "liquidationQuantity", 10 ** 45); // 1 unit of collateral per batch [rad]
         this.modifyParameters(address(liquidationEngine), collateralType, "liquidationPenalty", 1 ether);
 
@@ -231,11 +231,9 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
         safeEngine.modifySAFECollateralization(collateralType, address(this), address(this), address(this), 1 ether, 200 ether); // Maximun RAI generated
         nctOrcl.updateResult(uint(300 ether - 1)); // Decrease price in 1 wei
         oracleRelayer.updateCollateralPrice(collateralType);
-        assertEq(safeEngine.tokenCollateral(collateralType, address(nctFixedDiscountCollateralAuctionHouse)), 0);
+        assertEq(safeEngine.tokenCollateral(collateralType, address(nctIncreasingDiscountCollateralAuctionHouse)), 0);
 
         uint batchId = liquidationEngine.liquidateSAFE(collateralType, address(this));
-        (,,uint amountToSell,uint amountToRaise,,,) = nctFixedDiscountCollateralAuctionHouse.bids(batchId);
-        assertEq(safeEngine.tokenCollateral(collateralType, address(nctFixedDiscountCollateralAuctionHouse)), amountToSell);
 
         address(user1).transfer(10 ether);
         user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
@@ -245,15 +243,12 @@ contract NewCollateralProposalFixedDiscountAuctionTest is GebDeployTestBase {
         user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
         user2.doModifySAFECollateralization(address(safeEngine), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
 
-        user1.doSAFEApprove(address(safeEngine), address(nctFixedDiscountCollateralAuctionHouse));
-        user2.doSAFEApprove(address(safeEngine), address(nctFixedDiscountCollateralAuctionHouse));
+        user1.doSAFEApprove(address(safeEngine), address(nctIncreasingDiscountCollateralAuctionHouse));
+        user2.doSAFEApprove(address(safeEngine), address(nctIncreasingDiscountCollateralAuctionHouse));
 
-        user1.doBuyCollateral(address(nctFixedDiscountCollateralAuctionHouse), batchId, 0.1 ether);
-        user2.doBuyCollateral(address(nctFixedDiscountCollateralAuctionHouse), batchId, 0.2 ether);
-        user1.doBuyCollateral(address(nctFixedDiscountCollateralAuctionHouse), batchId, 0.3 ether);
-        user2.doBuyCollateral(address(nctFixedDiscountCollateralAuctionHouse), batchId, 3 ether);
-
-        assertEq(nctFixedDiscountCollateralAuctionHouse.remainingAmountToSell(batchId), 0);
-        assertEq(nctFixedDiscountCollateralAuctionHouse.amountToRaise(batchId), 0);
+        user1.doBuyCollateral(address(nctIncreasingDiscountCollateralAuctionHouse), batchId, 0.1 ether);
+        user2.doBuyCollateral(address(nctIncreasingDiscountCollateralAuctionHouse), batchId, 0.2 ether);
+        user1.doBuyCollateral(address(nctIncreasingDiscountCollateralAuctionHouse), batchId, 0.3 ether);
+        user2.doBuyCollateral(address(nctIncreasingDiscountCollateralAuctionHouse), batchId, 3 ether);
     }
 }

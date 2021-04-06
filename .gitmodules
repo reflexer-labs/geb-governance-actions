@@ -7,3 +7,6 @@
 [submodule "lib/merkle-distributor"]
 	path = lib/merkle-distributor
 	url = https://github.com/reflexer-labs/merkle-distributor.git
+[submodule "lib/geb-fsm"]
+	path = lib/geb-fsm
+	url = https://github.com/reflexer-labs/geb-fsm.git
