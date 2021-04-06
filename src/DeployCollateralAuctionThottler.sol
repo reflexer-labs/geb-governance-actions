@@ -14,6 +14,7 @@ abstract contract StabilityFeeTreasuryLike {
 contract DeployCollateralAuctionThottler {
     // --- Variables ---
     uint256 public constant RAY = 10**27;
+    uint256 public constant RAD = 10**45;
 
     function execute(
         address _safeEngine,
@@ -21,13 +22,14 @@ contract DeployCollateralAuctionThottler {
         address _treasury
     ) public returns (address) {
         // Define params
-        uint256 updateDelay                   = 6 hours;
-        uint256 backupUpdateDelay             = 7 hours;
-        uint256 maxRewardIncreaseDelay        = 6 hours;
-        uint256 baseUpdateCallerReward        = 5 ether;
+        uint256 updateDelay                   = 1 weeks;
+        uint256 backupUpdateDelay             = 8 days;
+        uint256 maxRewardIncreaseDelay        = 3 hours;
+        uint256 baseUpdateCallerReward        = 0;
         uint256 maxUpdateCallerReward         = 10 ether;
-        uint256 perSecondCallerRewardIncrease = 1000192559420674483977255848;
-        uint256 globalDebtPercentage          = 25;
+        uint256 perSecondCallerRewardIncrease = RAY;
+        uint256 globalDebtPercentage          = 20;
+        uint256 minAuctionLimit               = 500000 * RAD;
 
         address[] memory surplusHolders;
 
@@ -45,8 +47,9 @@ contract DeployCollateralAuctionThottler {
             surplusHolders
         );
 
-        // setting maxRewardIncreaseDelay
+        // setting params
         throttler.modifyParameters("maxRewardIncreaseDelay", maxRewardIncreaseDelay);
+        throttler.modifyParameters("minAuctionLimit", minAuctionLimit);
 
         // setting allowances in the SF treasury
         StabilityFeeTreasuryLike(_treasury).setPerBlockAllowance(address(throttler), maxUpdateCallerReward * RAY);
