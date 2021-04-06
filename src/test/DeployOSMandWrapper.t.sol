@@ -56,7 +56,7 @@ contract DeployOSMandWrapperTest is DSTest {
         deployProxy = new DeployOSMandWrapper();
     }
 
-    function test_execute2() public {
+    function test_execute() public {
         (bool success, bytes memory returnData) =  address(deployProxy).delegatecall(abi.encodeWithSignature(
             "execute(address,address,address,address)",
             address(treasury),

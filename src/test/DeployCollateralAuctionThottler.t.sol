@@ -43,13 +43,14 @@ contract DeployCollateralAuctionThottlerTest is DSTest {
         assertEq(address(throttler.liquidationEngine()), address(liquidationEngine));
         assertEq(address(throttler.treasury()), address(treasury));
 
-        assertEq(throttler.updateDelay(), 6 hours);
-        assertEq(throttler.backupUpdateDelay(), 7 hours);
-        assertEq(throttler.globalDebtPercentage(), 25);
-        assertEq(throttler.baseUpdateCallerReward(), 5 ether);
+        assertEq(throttler.updateDelay(), 1 weeks);
+        assertEq(throttler.backupUpdateDelay(), 8 days);
+        assertEq(throttler.globalDebtPercentage(), 20);
+        assertEq(throttler.baseUpdateCallerReward(), 0);
         assertEq(throttler.maxUpdateCallerReward(), 10 ether);
-        assertEq(throttler.perSecondCallerRewardIncrease(), 1000192559420674483977255848);
-        assertEq(throttler.maxRewardIncreaseDelay(), 6 hours);
+        assertEq(throttler.perSecondCallerRewardIncrease(), 10**27);
+        assertEq(throttler.maxRewardIncreaseDelay(), 3 hours);
+        assertEq(throttler.minAuctionLimit(), 500000 * 10**45);
 
         // checking allowances
         (uint total, uint perBlock) = treasury.getAllowance(address(throttler));
