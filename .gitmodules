@@ -13,3 +13,6 @@
 [submodule "lib/geb-debt-ceiling-setter"]
 	path = lib/geb-debt-ceiling-setter
 	url = https://github.com/reflexer-labs/geb-debt-ceiling-setter.git
+[submodule "lib/geb-debt-popper-rewards"]
+	path = lib/geb-debt-popper-rewards
+	url = https://github.com/reflexer-labs/geb-debt-popper-rewards.git

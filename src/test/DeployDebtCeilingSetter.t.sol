@@ -7,14 +7,14 @@ contract DeployDebtCeilingSetterTest is GebDeployTestBase {
     DeploySingleSpotDebtCeilingSetter deployProxy;
     uint256 public constant RAY = 10**27;
     uint256 public constant RAD = 10**45;
-    uint256 public baseUpdateCallerReward        = 0;
-    uint256 public maxUpdateCallerReward         = 10 ether;
+    uint256 public baseUpdateCallerReward        = 10e14;
+    uint256 public maxUpdateCallerReward         = 10e14;
     uint256 public perSecondCallerRewardIncrease = RAY;
-    uint256 public updateDelay                   = 1 weeks;
+    uint256 public updateDelay                   = 86400;
     uint256 public maxRewardIncreaseDelay        = 3 hours;
-    uint256 public ceilingPercentageChange       = 120;
-    uint256 public maxCollateralCeiling          = 1000e45;
-    uint256 public minCollateralCeiling          = 1e45;
+    uint256 public ceilingPercentageChange       = 125;
+    uint256 public maxCollateralCeiling          = uint(-1);
+    uint256 public minCollateralCeiling          = 10e51;
 
     function setUp() public override {
         super.setUp();
@@ -27,11 +27,12 @@ contract DeployDebtCeilingSetterTest is GebDeployTestBase {
         address      usr = address(deployProxy);
         bytes32      tag;  assembly { tag := extcodehash(usr) }
         bytes memory fax = abi.encodeWithSignature(
-            "execute(address,address,address,bytes32)",
+            "execute(address,address,address,bytes32,address)",
             address(safeEngine),
             address(oracleRelayer),
             address(stabilityFeeTreasury),
-            bytes32("ETH")
+            bytes32("ETH"),
+            address(0xfab)
         );
         uint         eta = now;
         pause.scheduleTransaction(usr, tag, fax, eta);
@@ -53,7 +54,7 @@ contract DeployDebtCeilingSetterTest is GebDeployTestBase {
 
         (uint total, uint perBlock) = stabilityFeeTreasury.getAllowance(address(ceilingSetter));
         assertEq(total, uint(-1));
-        assertEq(perBlock, maxUpdateCallerReward * RAY);
+        assertEq(perBlock, 10e41);
 
         assertEq(safeEngine.authorizedAccounts(address(ceilingSetter)), 1);
         assertEq(ceilingSetter.authorizedAccounts(address(pause.proxy())), 1);

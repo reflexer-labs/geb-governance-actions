@@ -20,19 +20,18 @@ contract DeploySingleSpotDebtCeilingSetter {
         address _safeEngine,
         address _oracleRelayer,
         address _treasury,
-        bytes32 _collateralName
+        bytes32 _collateralName,
+        address oldCeilingSetter
     ) public returns (address) {
         // Define params
-        uint256 baseUpdateCallerReward        = 0;
-        uint256 maxUpdateCallerReward         = 10 ether;
+        uint256 baseUpdateCallerReward        = 10e14;
+        uint256 maxUpdateCallerReward         = 10e14;
         uint256 perSecondCallerRewardIncrease = RAY;
-        uint256 updateDelay                   = 1 weeks;
+        uint256 updateDelay                   = 86400;
         uint256 maxRewardIncreaseDelay        = 3 hours;
-        uint256 ceilingPercentageChange       = 120;
-        uint256 maxCollateralCeiling          = 1000e45;
-        uint256 minCollateralCeiling          = 1e45;
-
-        address[] memory surplusHolders;
+        uint256 ceilingPercentageChange       = 125;
+        uint256 maxCollateralCeiling          = uint(-1);
+        uint256 minCollateralCeiling          = 10e6 * RAD;
 
         // deploy the throttler
         SingleSpotDebtCeilingSetter ceilingSetter = new SingleSpotDebtCeilingSetter(
@@ -53,8 +52,11 @@ contract DeploySingleSpotDebtCeilingSetter {
         ceilingSetter.modifyParameters("maxRewardIncreaseDelay", maxRewardIncreaseDelay);
 
         // setting allowances in the SF treasury
-        StabilityFeeTreasuryLike(_treasury).setPerBlockAllowance(address(ceilingSetter), maxUpdateCallerReward * RAY);
+        StabilityFeeTreasuryLike(_treasury).setPerBlockAllowance(address(ceilingSetter), 10e41);
         StabilityFeeTreasuryLike(_treasury).setTotalAllowance(address(ceilingSetter), uint(-1));
+
+        StabilityFeeTreasuryLike(_treasury).setPerBlockAllowance(address(oldCeilingSetter), 0);
+        StabilityFeeTreasuryLike(_treasury).setTotalAllowance(address(oldCeilingSetter), 0);
 
         // auth throttler in LiquidationEngine
         SAFEEngineLike(_safeEngine).addAuthorization(address(ceilingSetter));
