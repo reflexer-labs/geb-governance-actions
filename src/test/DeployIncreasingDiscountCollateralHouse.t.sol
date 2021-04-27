@@ -41,5 +41,7 @@ contract DeployIncreasingDiscountCollateralHouseTest is GebDeployTestBase {
         assertEq(address(newAuctionHouse.oracleRelayer()), address(oldAuctionHouse.oracleRelayer()));
         assertEq(address(newAuctionHouse.collateralFSM()), address(oldAuctionHouse.collateralFSM()));
         assertEq(address(newAuctionHouse.systemCoinOracle()), address(oldAuctionHouse.systemCoinOracle()));
+
+        assertEq(newAuctionHouse.authorizedAccounts(address(pause.proxy())), 1);
     }
 }
