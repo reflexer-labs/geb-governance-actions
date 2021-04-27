@@ -7,14 +7,14 @@ contract DeployDebtCeilingSetterTest is GebDeployTestBase {
     DeploySingleSpotDebtCeilingSetter deployProxy;
     uint256 public constant RAY = 10**27;
     uint256 public constant RAD = 10**45;
-    uint256 public baseUpdateCallerReward        = 10e14;
-    uint256 public maxUpdateCallerReward         = 10e14;
-    uint256 public perSecondCallerRewardIncrease = RAY;
-    uint256 public updateDelay                   = 86400;
-    uint256 public maxRewardIncreaseDelay        = 3 hours;
-    uint256 public ceilingPercentageChange       = 125;
-    uint256 public maxCollateralCeiling          = uint(-1);
-    uint256 public minCollateralCeiling          = 10e51;
+    uint256 baseUpdateCallerReward        = 10e13;
+    uint256 maxUpdateCallerReward         = 10e13;
+    uint256 perSecondCallerRewardIncrease = RAY;
+    uint256 updateDelay                   = 86400;
+    uint256 maxRewardIncreaseDelay        = 3 hours;
+    uint256 ceilingPercentageChange       = 125;
+    uint256 maxCollateralCeiling          = uint(-1);
+    uint256 minCollateralCeiling          = 10e5 * RAD;
 
     function setUp() public override {
         super.setUp();
@@ -54,7 +54,7 @@ contract DeployDebtCeilingSetterTest is GebDeployTestBase {
 
         (uint total, uint perBlock) = stabilityFeeTreasury.getAllowance(address(ceilingSetter));
         assertEq(total, uint(-1));
-        assertEq(perBlock, 10e41);
+        assertEq(perBlock, 10e40);
 
         assertEq(safeEngine.authorizedAccounts(address(ceilingSetter)), 1);
         assertEq(ceilingSetter.authorizedAccounts(address(pause.proxy())), 1);

@@ -2,10 +2,6 @@ pragma solidity 0.6.7;
 
 import {DebtPopperRewards} from "geb-debt-popper-rewards/DebtPopperRewards.sol";
 
-// abstract contract SAFEEngineLike {
-//     function addAuthorization(address) external virtual;
-// }
-
 abstract contract StabilityFeeTreasuryLike {
     function setTotalAllowance(address, uint256) external virtual;
     function setPerBlockAllowance(address, uint256) external virtual;
