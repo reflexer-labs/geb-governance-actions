@@ -12,7 +12,7 @@ contract DeployGlobalSettlementTest is GebDeployTestBase {
         deployProxy = new DeployGlobalSettlement();
     }
 
-    function test_execute2() public {
+    function test_execute() public {
 
         ESM oldEsm = esm;
         address oldGlobalSettlement = address(globalSettlement);
