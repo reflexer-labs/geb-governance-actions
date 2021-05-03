@@ -1,14 +1,19 @@
 pragma solidity ^0.6.7;
 
 import "ds-test/test.sol";
-import "ds-token/token.sol";
-
-import "geb/SAFEEngine.sol";
-import "./mock/MockTreasury.sol";
+import "geb-deploy/test/GebDeploy.t.base.sol";
 
 import "../DeployOSMandWrapper.sol";
 
-contract Feed {
+contract FsmGovernanceInterfaceMock {
+    mapping(bytes32 => address) public fsm;
+
+    function setFsm(bytes32 collateralType, address _fsm) external {
+        fsm[collateralType] = _fsm;
+    }
+}
+
+contract FeedMock {
     bytes32 public priceFeedValue;
     bool public hasValidValue;
     constructor(uint256 initPrice, bool initHas) public {
@@ -20,14 +25,6 @@ contract Feed {
     }
 }
 
-contract FsmGovernanceInterfaceMock {
-    mapping(bytes32 => address) public fsm;
-
-    function setFsm(bytes32 collateralType, address _fsm) external {
-        fsm[collateralType] = _fsm;
-    }
-}
-
 contract OracleRelayerMock {
     mapping (bytes32 => mapping(bytes32 => address)) public parameters;
 
@@ -36,62 +33,60 @@ contract OracleRelayerMock {
     }
 }
 
-contract DeployOSMandWrapperTest is DSTest {
+contract DeployOSMandWrapperTest is GebDeployTestBase {
     DeployOSMandWrapper deployProxy;
 
     // Main contracts
-    DSToken systemCoin;
-    MockTreasury treasury;
-    Feed feed;
+    FeedMock feed;
     FsmGovernanceInterfaceMock fsmGovernanceInterface;
-    OracleRelayerMock oracleRelayer;
 
-    function setUp() public {
-        systemCoin             = new DSToken("RAI", "RAI");
-        treasury               = new MockTreasury(address(systemCoin));
-        feed                   = new Feed(100 ether, true);
+    function setUp() public override {
+        super.setUp();
+        deployIndex("");
+
+        feed        = new FeedMock(100 ether, true);
         fsmGovernanceInterface = new FsmGovernanceInterfaceMock();
-        oracleRelayer          = new OracleRelayerMock();
-
         deployProxy = new DeployOSMandWrapper();
+
     }
 
     function test_execute() public {
-        (bool success, bytes memory returnData) =  address(deployProxy).delegatecall(abi.encodeWithSignature(
-            "execute(address,address,address,address)",
-            address(treasury),
-            address(feed),
-            address(fsmGovernanceInterface),
-            address(oracleRelayer)
-        ));
-        assertTrue(success);
+        // deploy the proposal
+        address      usr = address(deployProxy);
+        bytes32      tag;  assembly { tag := extcodehash(usr) }
+        bytes memory fax = abi.encodeWithSignature(
+        "execute(address,address,address)",
+        address(stabilityFeeTreasury),
+        address(feed),
+        address(fsmGovernanceInterface)
+        );
+        uint         eta = now;
+        pause.scheduleTransaction(usr, tag, fax, eta);
+        bytes memory out = pause.executeTransaction(usr, tag, fax, eta);
 
-        ExternallyFundedOSM osm = ExternallyFundedOSM(abi.decode(returnData, (address)));
+        ExternallyFundedOSM osm = ExternallyFundedOSM(abi.decode(out, (address)));
         assertEq(osm.priceSource(), address(feed));
 
         FSMWrapper osmWrapper = FSMWrapper(address(osm.fsmWrapper()));
 
         assertEq(fsmGovernanceInterface.fsm("ETH-A"), address(osmWrapper));
-        assertEq(oracleRelayer.parameters("ETH-A","orcl"), address(osmWrapper));
 
-        // // checking wrapper deployment
+        // checking wrapper deployment
         assertEq(address(osmWrapper.fsm()), address(osm));
-        assertEq(osmWrapper.reimburseDelay(), 6 hours);
-        assertEq(address(osmWrapper.treasury()), address(treasury));
-
-        assertEq(osmWrapper.reimburseDelay(), 6 hours);
-        assertEq(osmWrapper.baseUpdateCallerReward(), 5 ether);
-        assertEq(osmWrapper.maxUpdateCallerReward(), 10 ether);
-        assertEq(osmWrapper.perSecondCallerRewardIncrease(), 1000192559420674483977255848);
-        assertEq(osmWrapper.maxRewardIncreaseDelay(), 6 hours);
+        assertEq(address(osmWrapper.treasury()), address(stabilityFeeTreasury));
+        assertEq(osmWrapper.reimburseDelay(), 1 hours);
+        assertEq(osmWrapper.baseUpdateCallerReward(), 0.0001 ether);
+        assertEq(osmWrapper.maxUpdateCallerReward(), 0.0001 ether);
+        assertEq(osmWrapper.perSecondCallerRewardIncrease(), 10**27);
+        assertEq(osmWrapper.maxRewardIncreaseDelay(), 3 hours);
 
         // checking allowances
-        (uint total, uint perBlock) = treasury.getAllowance(address(osmWrapper));
+        (uint total, uint perBlock) = stabilityFeeTreasury.getAllowance(address(osmWrapper));
         assertEq(total, uint(-1));
-        assertEq(perBlock, 10 ** 46);
+        assertEq(perBlock, 0.0001 ether * 10**27);
 
         // checking auth in the throttler itself
-        assertEq(osmWrapper.authorizedAccounts(address(this)), 1);
+        assertEq(osmWrapper.authorizedAccounts(address(pause.proxy())), 1);
         assertEq(osmWrapper.authorizedAccounts(address(deployProxy)), 0);
     }
 }
