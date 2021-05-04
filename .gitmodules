@@ -10,3 +10,15 @@
 [submodule "lib/geb-fsm"]
 	path = lib/geb-fsm
 	url = https://github.com/reflexer-labs/geb-fsm.git
+[submodule "lib/geb-debt-ceiling-setter"]
+	path = lib/geb-debt-ceiling-setter
+	url = https://github.com/reflexer-labs/geb-debt-ceiling-setter.git
+[submodule "lib/geb-debt-popper-rewards"]
+	path = lib/geb-debt-popper-rewards
+	url = https://github.com/reflexer-labs/geb-debt-popper-rewards.git
+[submodule "lib/geb-rrfm-rate-setter"]
+	path = lib/geb-rrfm-rate-setter
+	url = https://github.com/reflexer-labs/geb-rrfm-rate-setter.git
+[submodule "lib/geb-rrfm-calculators"]
+	path = lib/geb-rrfm-calculators
+	url = https://github.com/reflexer-labs/geb-rrfm-calculators.git

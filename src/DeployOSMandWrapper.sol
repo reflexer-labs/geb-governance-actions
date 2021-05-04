@@ -20,19 +20,23 @@ abstract contract OracleRelayerLike {
     function modifyParameters(bytes32, bytes32, address) external virtual;
 }
 
+// @notice Proposal to deploy and setup new OSM and wrapper
+// missing steps for upgrade (to allow for testing before commiting to the deployment)
+// - change orcl for the collateral in oracleRelayer
+// - change collateralFSM in collateralAuctionHouse
 contract DeployOSMandWrapper {
     // --- Variables ---
     uint256 public constant RAY = 10**27;
 
-    function execute(address _treasury, address ethMedianizer, address fsmGovernanceInterface, address oracleRelayer) public returns (address) {
+    function execute(address _treasury, address ethMedianizer, address fsmGovernanceInterface) public returns (address) {
         // Define params (kovan 1.3)
         StabilityFeeTreasuryLike treasury     = StabilityFeeTreasuryLike(_treasury);
         bytes32 collateralType                = bytes32("ETH-A");
-        uint256 reimburseDelay                = 6 hours;
-        uint256 maxRewardIncreaseDelay        = 6 hours;
-        uint256 baseUpdateCallerReward        = 5 ether;
-        uint256 maxUpdateCallerReward         = 10 ether;
-        uint256 perSecondCallerRewardIncrease = 1000192559420674483977255848;
+        uint256 reimburseDelay                = 3600;
+        uint256 maxRewardIncreaseDelay        = 10800;
+        uint256 baseUpdateCallerReward        = 0.0001 ether;
+        uint256 maxUpdateCallerReward         = 0.0001 ether;
+        uint256 perSecondCallerRewardIncrease = 1 * RAY;
 
         // deploy new OSM
         ExternallyFundedOSM osm = new ExternallyFundedOSM(ethMedianizer);
@@ -47,11 +51,10 @@ contract DeployOSMandWrapper {
         osm.modifyParameters("fsmWrapper", address(osmWrapper));
 
         FsmGovernanceInterfaceLike(fsmGovernanceInterface).setFsm(collateralType, address(osmWrapper));
-        OracleRelayerLike(oracleRelayer).modifyParameters(collateralType, "orcl", address(osmWrapper));
 
         // Setup treasury allowance
         treasury.setTotalAllowance(address(osmWrapper), uint(-1));
-        treasury.setPerBlockAllowance(address(osmWrapper), maxUpdateCallerReward * RAY);
+        treasury.setPerBlockAllowance(address(osmWrapper), 0.0001 ether * RAY);
 
         // Set the remaining params
         osmWrapper.modifyParameters("treasury", address(treasury));
