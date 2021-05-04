@@ -72,13 +72,33 @@ contract DeployPIRateSetterTest is GebDeployTestBase {
         pause.scheduleTransaction(usr, tag, fax, eta);
         bytes memory out = pause.executeTransaction(usr, tag, fax, eta);
 
-        (address rateSetterAddress, address relayerAddress) = abi.decode(out, (address,address));
+        (address calculatorAddress, address rateSetterAddress, address relayerAddress) = abi.decode(out, (address,address,address));
+        PRawPerSecondCalculator calculator = PRawPerSecondCalculator(calculatorAddress);
         PIRateSetter rateSetter = PIRateSetter(rateSetterAddress);
         SetterRelayer relayer = SetterRelayer(relayerAddress);
 
         // auth
-        assertEq(oracleRelayer.authorizedAccounts(address(oldSetter)), 0);
-        assertEq(oracleRelayer.authorizedAccounts(address(relayer)), 1);
+        // assertEq(oracleRelayer.authorizedAccounts(address(oldSetter)), 0);
+        // assertEq(oracleRelayer.authorizedAccounts(address(relayer)), 1);
+        assertEq(calculator.authorities(address(rateSetter)), 1);
+        assertEq(relayer.authorizedAccounts(address(rateSetter)), 1);
+
+        // calculator params
+        usr = address(govActions);
+        assembly { tag := extcodehash(usr) }
+        fax = abi.encodeWithSignature(
+            "addReader(address,address)",
+            address(calculator),
+            address(this)
+        );
+        pause.scheduleTransaction(usr, tag, fax, eta);
+        bytes memory out2 = pause.executeTransaction(usr, tag, fax, eta);
+
+        assertEq(calculator.sg(), 750 * 10**6);
+        assertEq(calculator.ps(), 21600);
+        assertEq(calculator.nb(), 10**18);
+        assertEq(calculator.foub(), 10**45);
+        assertEq(calculator.folb(), -int((10**27)-1));
 
         // relayer params
         assertEq(address(relayer.oracleRelayer()), address(oracleRelayer));
