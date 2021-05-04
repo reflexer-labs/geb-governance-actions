@@ -80,8 +80,8 @@ contract DeployPIRateSetterTest is GebDeployTestBase {
         // auth
         // assertEq(oracleRelayer.authorizedAccounts(address(oldSetter)), 0);
         // assertEq(oracleRelayer.authorizedAccounts(address(relayer)), 1);
-        assertEq(calculator.authorities(address(rateSetter)), 1);
-        assertEq(relayer.authorizedAccounts(address(rateSetter)), 1);
+        assertEq(calculator.seedProposer(), address(rateSetter));
+        assertEq(relayer.setter(), address(rateSetter));
 
         // calculator params
         usr = address(govActions);
@@ -94,7 +94,7 @@ contract DeployPIRateSetterTest is GebDeployTestBase {
         pause.scheduleTransaction(usr, tag, fax, eta);
         bytes memory out2 = pause.executeTransaction(usr, tag, fax, eta);
 
-        assertEq(calculator.sg(), 750 * 10**6);
+        assertEq(calculator.sg(), 500 * 10**6);
         assertEq(calculator.ps(), 21600);
         assertEq(calculator.nb(), 10**18);
         assertEq(calculator.foub(), 10**45);
@@ -112,7 +112,7 @@ contract DeployPIRateSetterTest is GebDeployTestBase {
         assertEq(address(rateSetter.oracleRelayer()), address(oracleRelayer));
         assertEq(address(rateSetter.setterRelayer()), address(relayer));
         assertEq(address(rateSetter.orcl()), address(orcl));
-        assertEq(address(rateSetter.pidCalculator()), address(0xfab));
+        assertEq(address(rateSetter.pidCalculator()), address(calculator));
         assertEq(rateSetter.updateRateDelay(), 6 hours);
     }
 }
