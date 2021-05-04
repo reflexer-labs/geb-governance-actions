@@ -14,7 +14,6 @@ abstract contract LiquidationEngineLike {
 }
 
 contract DeployIncreasingDiscountCollateralHouse {
-
     function execute(address safeEngine, LiquidationEngineLike liquidationEngine, bytes32 collateralType, address globalSettlement) public returns (address) {
         // get old collateral house
         (IncreasingDiscountCollateralAuctionHouse oldCollateralHouse,,) = liquidationEngine.collateralTypes(collateralType);

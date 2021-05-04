@@ -19,11 +19,11 @@ contract DeployDebtPopperRewards {
     ) public returns (address) {
         // Define params
         uint256 rewardPeriodStart = 1619602729;
-        uint256 interPeriodDelay = 1209600;
-        uint256 rewardTimeline = 4838400;
-        uint256 fixedReward = 1 * WAD;
-        uint256 maxPerPeriodPops = 10;
-        uint256 rewardStartTime = 1619602729;
+        uint256 interPeriodDelay  = 1209600;
+        uint256 rewardTimeline    = 4838400;
+        uint256 fixedReward       = 1 * WAD;
+        uint256 maxPerPeriodPops  = 10;
+        uint256 rewardStartTime   = 1619602729;
 
         // deploy the throttler
         DebtPopperRewards popperRewards = new DebtPopperRewards(

@@ -21,9 +21,9 @@ abstract contract OracleRelayerLike {
 }
 
 // @notice Proposal to deploy and setup new OSM and wrapper
-// missing steps for upgrade (to allow for testing before commiting to the deployment)
-// - change orcl for the collateral in oracleRelayer
-// - change collateralFSM in collateralAuctionHouse
+// Missing steps:
+// - Change orcl for the targeted collateral in the OracleRelayer
+// - Change collateralFSM in the collateral's auction house
 contract DeployOSMandWrapper {
     // --- Variables ---
     uint256 public constant RAY = 10**27;
