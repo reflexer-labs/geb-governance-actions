@@ -8,6 +8,11 @@ abstract contract OldRateSetterLike is PIRateSetter {
     function treasury() public virtual returns (address);
 }
 
+abstract contract StabilityFeeTreasuryLike {
+    function setTotalAllowance(address, uint256) external virtual;
+    function setPerBlockAllowance(address, uint256) external virtual;
+}
+
 abstract contract Setter {
     function addAuthorization(address) external virtual;
     function removeAuthorization(address) external virtual;
@@ -21,7 +26,8 @@ contract DeployPIRateSetter {
     uint constant RAY = 10 ** 27;
 
     function execute(address oldRateSetter) public returns (address, address, address) {
-        OldRateSetterLike oldSetter = OldRateSetterLike(oldRateSetter);
+        OldRateSetterLike oldSetter       = OldRateSetterLike(oldRateSetter);
+        StabilityFeeTreasuryLike treasury = StabilityFeeTreasuryLike(oldSetter.treasury());
 
         // deploy the P only calculator
         PRawPerSecondCalculator calculator = new PRawPerSecondCalculator(
@@ -54,6 +60,13 @@ contract DeployPIRateSetter {
         );
 
         rateSetter.modifyParameters("defaultLeak", 1);
+
+        // Setup treasury allowance
+        treasury.setTotalAllowance(address(oldSetter), 0);
+        treasury.setPerBlockAllowance(address(oldSetter), 0);
+
+        treasury.setTotalAllowance(address(relayer), uint(-1));
+        treasury.setPerBlockAllowance(address(relayer), 0.0001 ether * RAY);
 
         // auth
         calculator.modifyParameters("seedProposer", address(rateSetter));

@@ -60,7 +60,6 @@ contract DeployPIRateSetterTest is GebDeployTestBase {
     }
 
     function test_execute() public {
-
         // deploy the proposal
         address      usr = address(deployProxy);
         bytes32      tag;  assembly { tag := extcodehash(usr) }
@@ -107,6 +106,15 @@ contract DeployPIRateSetterTest is GebDeployTestBase {
         assertEq(relayer.maxUpdateCallerReward(), 0.0001 ether);
         assertEq(relayer.perSecondCallerRewardIncrease(), 1 * RAY);
         assertEq(relayer.relayDelay(), 6 hours);
+
+        // checking treasury allowances
+        (uint total, uint perBlock) = stabilityFeeTreasury.getAllowance(address(relayer));
+        assertEq(total, uint(-1));
+        assertEq(perBlock, 0.0001 ether * 10**27);
+
+        (total, perBlock) = stabilityFeeTreasury.getAllowance(address(rateSetter));
+        assertEq(total, 0);
+        assertEq(perBlock, 0);
 
         // setter params
         assertEq(address(rateSetter.oracleRelayer()), address(oracleRelayer));

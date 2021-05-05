@@ -3,6 +3,11 @@ pragma solidity 0.6.7;
 import {UniswapConsecutiveSlotsPriceFeedMedianizer} from "geb-uniswap-median/UniswapConsecutiveSlotsPriceFeedMedianizer.sol";
 import {IncreasingRewardRelayer} from "geb-treasury-reimbursement/relayer/IncreasingRewardRelayer.sol";
 
+abstract contract StabilityFeeTreasuryLike {
+    function setTotalAllowance(address, uint256) external virtual;
+    function setPerBlockAllowance(address, uint256) external virtual;
+}
+
 abstract contract OldTwapLike is UniswapConsecutiveSlotsPriceFeedMedianizer {
     function treasury() public virtual returns (address);
 }
@@ -16,7 +21,8 @@ contract DeployUniswapTWAP {
     uint256 public constant RAY = 10**27;
 
     function execute(address oldTwapAddress) public returns (address, address) {
-        OldTwapLike oldTwap = OldTwapLike(oldTwapAddress);
+        OldTwapLike oldTwap               = OldTwapLike(oldTwapAddress);
+        StabilityFeeTreasuryLike treasury = StabilityFeeTreasuryLike(oldTwap.treasury());
 
         // deploy new TWAP
         UniswapConsecutiveSlotsPriceFeedMedianizer newTwap = new UniswapConsecutiveSlotsPriceFeedMedianizer(
@@ -32,7 +38,7 @@ contract DeployUniswapTWAP {
         newTwap.modifyParameters("targetToken", oldTwap.targetToken());
         newTwap.modifyParameters("denominationToken", oldTwap.denominationToken());
 
-        // deploy increasing reward relayer:
+        // deploy increasing reward relayer
         IncreasingRewardRelayer rewardRelayer = new IncreasingRewardRelayer(
             address(newTwap), // refundRequestor
             address(oldTwap.treasury()),
@@ -46,6 +52,13 @@ contract DeployUniswapTWAP {
 
         // setting relayer in the TWAP
         newTwap.modifyParameters("relayer", address(rewardRelayer));
+
+        // Setup treasury allowance
+        treasury.setTotalAllowance(address(oldTwap), 0);
+        treasury.setPerBlockAllowance(address(oldTwap), 0);
+
+        treasury.setTotalAllowance(address(rewardRelayer), uint(-1));
+        treasury.setPerBlockAllowance(address(rewardRelayer), 0.0001 ether * RAY);
 
         return (address(newTwap), address(rewardRelayer));
     }
