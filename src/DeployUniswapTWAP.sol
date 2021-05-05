@@ -7,10 +7,10 @@ abstract contract OldTwapLike is UniswapConsecutiveSlotsPriceFeedMedianizer {
     function treasury() public virtual returns (address);
 }
 
-// @notice Proposal to deploy and setup new Uniswap TWAP
+// @notice Proposal to deploy and setup a new Uniswap TWAP
 // @notice The contract will be deployed/setup, but not yet connected to the system (to allow for testing)
 // Missing steps:
-// - connect to the RateSetter
+// - Connect to the RateSetter
 contract DeployUniswapTWAP {
     // --- Variables ---
     uint256 public constant RAY = 10**27;
@@ -44,7 +44,7 @@ contract DeployUniswapTWAP {
 
         rewardRelayer.modifyParameters("maxRewardIncreaseDelay", 10800);
 
-        // setting relayer on twap
+        // setting relayer in the TWAP
         newTwap.modifyParameters("relayer", address(rewardRelayer));
 
         return (address(newTwap), address(rewardRelayer));
