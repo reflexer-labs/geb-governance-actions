@@ -1,6 +1,6 @@
 pragma solidity ^0.6.7;
 
-import "ds-test/test.sol";
+import "geb-deploy/test/GebDeploy.t.base.sol";
 import "merkle-distributor/MerkleDistributorFactory.sol";
 
 import "../DeployUniswapTWAP.sol";
@@ -42,16 +42,15 @@ contract TreasuryMock {
     address public systemCoin = address(0xc01);
 }
 
-contract DeployUniswapTWAPTest is DSTest {
+contract DeployUniswapTWAPTest is GebDeployTestBase {
     OldTwapMock oldTwap;
     UniswapFactoryMock uniFactory;
-    TreasuryMock treasury;
     DeployUniswapTWAP proxy;
 
-    function setUp() public {
+    function setUp() public override {
+        super.setUp();
+        deployIndex("");
         uniFactory = new UniswapFactoryMock();
-
-        treasury = new TreasuryMock();
 
         oldTwap = new OldTwapMock(
             address(0xfeed),
@@ -61,7 +60,7 @@ contract DeployUniswapTWAPTest is DSTest {
             1000000000000000000,
             86400,
             4,
-            address(treasury)
+            address(stabilityFeeTreasury)
         );
 
         oldTwap.modifyParameters("targetToken", address(0xabc));
@@ -95,7 +94,7 @@ contract DeployUniswapTWAPTest is DSTest {
 
         // test relayer
         assertEq(address(relayer.refundRequestor()), address(newTwap));
-        assertEq(address(relayer.treasury()), address(treasury));
+        assertEq(address(relayer.treasury()), address(stabilityFeeTreasury));
         assertEq(relayer.baseUpdateCallerReward(), 0.0001 ether);
         assertEq(relayer.maxUpdateCallerReward(), 0.0001 ether);
         assertEq(relayer.perSecondCallerRewardIncrease(), proxy.RAY());
