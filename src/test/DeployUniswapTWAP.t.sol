@@ -101,5 +101,14 @@ contract DeployUniswapTWAPTest is DSTest {
         assertEq(relayer.perSecondCallerRewardIncrease(), proxy.RAY());
         assertEq(relayer.reimburseDelay(), 21600);
         assertEq(relayer.maxRewardIncreaseDelay(), 10800);
+
+        // checking treasury allowances
+        (uint total, uint perBlock) = stabilityFeeTreasury.getAllowance(address(relayer));
+        assertEq(total, uint(-1));
+        assertEq(perBlock, 0.0001 ether * 10**27);
+
+        (total, perBlock) = stabilityFeeTreasury.getAllowance(address(oldTwap));
+        assertEq(total, 0);
+        assertEq(perBlock, 0);
     }
 }

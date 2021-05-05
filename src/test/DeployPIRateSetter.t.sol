@@ -112,7 +112,7 @@ contract DeployPIRateSetterTest is GebDeployTestBase {
         assertEq(total, uint(-1));
         assertEq(perBlock, 0.0001 ether * 10**27);
 
-        (total, perBlock) = stabilityFeeTreasury.getAllowance(address(rateSetter));
+        (total, perBlock) = stabilityFeeTreasury.getAllowance(address(oldSetter));
         assertEq(total, 0);
         assertEq(perBlock, 0);
 
