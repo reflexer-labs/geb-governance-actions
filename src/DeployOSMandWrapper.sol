@@ -29,7 +29,7 @@ contract DeployOSMandWrapper {
     uint256 public constant RAY = 10**27;
 
     function execute(address _treasury, address ethMedianizer, address fsmGovernanceInterface) public returns (address) {
-        // Define params (kovan 1.3)
+        // Define params
         StabilityFeeTreasuryLike treasury     = StabilityFeeTreasuryLike(_treasury);
         bytes32 collateralType                = bytes32("ETH-A");
         uint256 reimburseDelay                = 3600;
