@@ -28,9 +28,10 @@ contract DeployGlobalSettlementTest is GebDeployTestBase {
         pause.scheduleTransaction(usr, tag, fax, eta);
         bytes memory out = pause.executeTransaction(usr, tag, fax, eta);
 
-        (address globalSettlementAddress, address esmAddress) = abi.decode(out, (address,address));
+        (address globalSettlementAddress, address esmAddress, address thresholdSetterAddress) = abi.decode(out, (address,address,address));
         globalSettlement = GlobalSettlement(globalSettlementAddress);
         esm = ESM(esmAddress);
+        ESMThresholdSetter thresholdSetter = ESMThresholdSetter(thresholdSetterAddress);
 
         // settings
         assertEq(address(globalSettlement.safeEngine()), address(safeEngine));
@@ -60,7 +61,13 @@ contract DeployGlobalSettlementTest is GebDeployTestBase {
         assertEq(address(esm.protocolToken()), address(prot));
         assertEq(address(esm.globalSettlement()), address(globalSettlement));
         assertEq(address(esm.tokenBurner()), address(oldEsm.tokenBurner()));
-        assertEq(address(esm.thresholdSetter()), address(oldEsm.thresholdSetter()));
-        assertEq(address(esm.triggerThreshold()), address(oldEsm.triggerThreshold()));
+        assertEq(address(esm.thresholdSetter()), address(thresholdSetterAddress));
+        assertEq(esm.triggerThreshold(), 10 ether);
+
+        // ThresholdSetter
+        assertEq(address(thresholdSetter.esm()), address(esm));
+        assertEq(address(thresholdSetter.protocolToken()), address(prot));
+        assertEq(thresholdSetter.minAmountToBurn(), 50000 ether);
+        assertEq(thresholdSetter.supplyPercentageToBurn(), 100);
     }
 }
