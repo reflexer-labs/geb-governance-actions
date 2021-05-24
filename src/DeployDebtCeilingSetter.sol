@@ -58,8 +58,9 @@ contract DeploySingleSpotDebtCeilingSetter {
         StabilityFeeTreasuryLike(_treasury).setPerBlockAllowance(address(oldCeilingSetter), 0);
         StabilityFeeTreasuryLike(_treasury).setTotalAllowance(address(oldCeilingSetter), 0);
 
-        // auth throttler in LiquidationEngine
-        SAFEEngineLike(_safeEngine).addAuthorization(address(ceilingSetter));
+        // auth setter in safeEngine
+        // SAFEEngineLike(_safeEngine).addAuthorization(address(ceilingSetter));
+        // SAFEEngineLike(_safeEngine).removeAuthorization(address(oldCeilingSetter));
 
         return address(ceilingSetter);
     }

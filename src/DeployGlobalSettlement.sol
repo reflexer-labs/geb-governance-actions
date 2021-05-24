@@ -2,16 +2,18 @@ pragma solidity 0.6.7;
 
 import {GlobalSettlement} from "geb/GlobalSettlement.sol";
 import {ESM} from "esm/ESM.sol";
+import {ESMThresholdSetter} from "geb-esm-threshold-setter/ESMThresholdSetter.sol";
 
 abstract contract Setter {
     function addAuthorization(address) external virtual;
     function removeAuthorization(address) external virtual;
     function modifyParameters(bytes32,bytes32,address) external virtual;
+    function modifyParameters(bytes32,address) external virtual;
 }
 
 contract DeployGlobalSettlement {
 
-    function execute(address currentEsm) public returns (address, address) {
+    function execute(address currentEsm) public returns (address, address, address) {
 
         // get old GlobalSettlement
         ESM oldEsm = ESM(currentEsm);
@@ -60,16 +62,25 @@ contract DeployGlobalSettlement {
           Setter(stabilityFeeTreasury).removeAuthorization(address(oldGlobalSettlement));
         }
 
+        // deploying new threshold setter
+        address thresholdSetter = address(new ESMThresholdSetter(
+          address(oldEsm.protocolToken()),
+          50000 ether, // minAmountToBurn
+          100          // 10%, supplyPercentageToBurn
+        ));
+
         // Deploying new ESM
         address esm = address(new ESM(
             address(oldEsm.protocolToken()),
             address(globalSettlement),
             address(oldEsm.tokenBurner()),
-            address(oldEsm.thresholdSetter()),
-            oldEsm.triggerThreshold()
+            address(thresholdSetter),
+            10 ether
         ));
         globalSettlement.addAuthorization(esm);
 
-        return (address(globalSettlement), esm);
+        Setter(thresholdSetter).modifyParameters("esm", esm);
+
+        return (address(globalSettlement), esm, thresholdSetter);
     }
 }
