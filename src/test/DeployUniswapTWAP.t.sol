@@ -38,10 +38,6 @@ contract UniswapFactoryMock {
     }
 }
 
-contract TreasuryMock {
-    address public systemCoin = address(0xc01);
-}
-
 contract DeployUniswapTWAPTest is GebDeployTestBase {
     OldTwapMock oldTwap;
     UniswapFactoryMock uniFactory;
@@ -70,11 +66,17 @@ contract DeployUniswapTWAPTest is GebDeployTestBase {
     }
 
     function test_execute() public {
-        (bool success, bytes memory out) =  address(proxy).delegatecall(abi.encodeWithSignature(
+        // deploy the proposal
+        address      usr = address(proxy);
+        bytes32      tag;  assembly { tag := extcodehash(usr) }
+        bytes memory fax = abi.encodeWithSignature(
             "execute(address)",
             address(oldTwap)
-        ));
-        assertTrue(success);
+        );
+        uint         eta = now;
+        pause.scheduleTransaction(usr, tag, fax, eta);
+        bytes memory out = pause.executeTransaction(usr, tag, fax, eta);
+
         (address twapAddress, address relayerAddress) = abi.decode(out, (address,address));
 
         UniswapConsecutiveSlotsPriceFeedMedianizer newTwap = UniswapConsecutiveSlotsPriceFeedMedianizer(twapAddress);
