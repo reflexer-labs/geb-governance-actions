@@ -14,7 +14,7 @@ contract DeployDebtCeilingSetterTest is GebDeployTestBase {
     uint256 maxRewardIncreaseDelay        = 3 hours;
     uint256 ceilingPercentageChange       = 125;
     uint256 maxCollateralCeiling          = uint(-1);
-    uint256 minCollateralCeiling          = 10e5 * RAD;
+    uint256 minCollateralCeiling          = 10e6 * RAD;
 
     function setUp() public override {
         super.setUp();
@@ -56,7 +56,8 @@ contract DeployDebtCeilingSetterTest is GebDeployTestBase {
         assertEq(total, uint(-1));
         assertEq(perBlock, 10e40);
 
-        // assertEq(safeEngine.authorizedAccounts(address(ceilingSetter)), 1);
+        assertEq(safeEngine.authorizedAccounts(address(ceilingSetter)), 1);
+        assertEq(safeEngine.authorizedAccounts(address(0xfab)), 0);
         assertEq(ceilingSetter.authorizedAccounts(address(pause.proxy())), 1);
 
     }

@@ -35,7 +35,6 @@ contract DeployDebtPopperRewards {
             fixedReward,
             maxPerPeriodPops,
             rewardStartTime
-
         );
 
         // setting allowances in the SF treasury

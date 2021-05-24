@@ -4,6 +4,7 @@ import {SingleSpotDebtCeilingSetter} from "geb-debt-ceiling-setter/SingleSpotDeb
 
 abstract contract SAFEEngineLike {
     function addAuthorization(address) external virtual;
+    function removeAuthorization(address) external virtual;
 }
 
 abstract contract StabilityFeeTreasuryLike {
@@ -24,14 +25,14 @@ contract DeploySingleSpotDebtCeilingSetter {
         address oldCeilingSetter
     ) public returns (address) {
         // Define params
-        uint256 baseUpdateCallerReward        = 10e13;
-        uint256 maxUpdateCallerReward         = 10e13;
+        uint256 baseUpdateCallerReward        = 0.0001 ether;
+        uint256 maxUpdateCallerReward         = 0.0001 ether;
         uint256 perSecondCallerRewardIncrease = RAY;
-        uint256 updateDelay                   = 86400;
+        uint256 updateDelay                   = 24 hours;
         uint256 maxRewardIncreaseDelay        = 3 hours;
         uint256 ceilingPercentageChange       = 125;
         uint256 maxCollateralCeiling          = uint(-1);
-        uint256 minCollateralCeiling          = 10e5 * RAD;
+        uint256 minCollateralCeiling          = 10e6 * RAD;
 
         // deploy the throttler
         SingleSpotDebtCeilingSetter ceilingSetter = new SingleSpotDebtCeilingSetter(
@@ -59,8 +60,8 @@ contract DeploySingleSpotDebtCeilingSetter {
         StabilityFeeTreasuryLike(_treasury).setTotalAllowance(address(oldCeilingSetter), 0);
 
         // auth setter in safeEngine
-        // SAFEEngineLike(_safeEngine).addAuthorization(address(ceilingSetter));
-        // SAFEEngineLike(_safeEngine).removeAuthorization(address(oldCeilingSetter));
+        SAFEEngineLike(_safeEngine).addAuthorization(address(ceilingSetter));
+        SAFEEngineLike(_safeEngine).removeAuthorization(address(oldCeilingSetter));
 
         return address(ceilingSetter);
     }

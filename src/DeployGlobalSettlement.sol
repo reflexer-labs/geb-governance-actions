@@ -31,6 +31,7 @@ contract DeployGlobalSettlement {
         GlobalSettlement globalSettlement = new GlobalSettlement();
 
         // Settings
+        globalSettlement.modifyParameters("shutdownCooldown", 345600);
         globalSettlement.modifyParameters("safeEngine", safeEngine);
         globalSettlement.modifyParameters("liquidationEngine", liquidationEngine);
         globalSettlement.modifyParameters("accountingEngine", accountingEngine);
@@ -82,5 +83,44 @@ contract DeployGlobalSettlement {
         Setter(thresholdSetter).modifyParameters("esm", esm);
 
         return (address(globalSettlement), esm, thresholdSetter);
+    }
+}
+
+abstract contract GlobalSettlementLike {
+    function safeEngine() public virtual returns (address);
+    function liquidationEngine() public virtual returns (address);
+    function accountingEngine() public virtual returns (address);
+    function oracleRelayer() public virtual returns (address);
+    function stabilityFeeTreasury() public virtual returns (address);
+}
+
+// @notice Swaps auth of a pre deployed Global Settlement with the active one
+contract SwapGlobalSettlement {
+
+    function execute(address oldGlobalSettlement, address newGlobalSettlement) public {
+
+        // get old GlobalSettlement
+        GlobalSettlementLike oldContract = GlobalSettlementLike(oldGlobalSettlement);
+
+        // getting old GlobalSettlement vars
+        address safeEngine = oldContract.safeEngine();
+        address liquidationEngine = oldContract.liquidationEngine();
+        address accountingEngine = oldContract.accountingEngine();
+        address oracleRelayer = oldContract.oracleRelayer();
+        address stabilityFeeTreasury = oldContract.stabilityFeeTreasury();
+
+        // Authing new GlobalSettlement
+        Setter(safeEngine).addAuthorization(newGlobalSettlement);
+        Setter(liquidationEngine).addAuthorization(newGlobalSettlement);
+        Setter(accountingEngine).addAuthorization(newGlobalSettlement);
+        Setter(oracleRelayer).addAuthorization(newGlobalSettlement);
+        Setter(stabilityFeeTreasury).addAuthorization(newGlobalSettlement);
+
+        // Deauthing old GlobalSettlement
+        Setter(safeEngine).removeAuthorization(oldGlobalSettlement);
+        Setter(liquidationEngine).removeAuthorization(oldGlobalSettlement);
+        Setter(accountingEngine).removeAuthorization(oldGlobalSettlement);
+        Setter(oracleRelayer).removeAuthorization(oldGlobalSettlement);
+        Setter(stabilityFeeTreasury).removeAuthorization(address(oldGlobalSettlement));
     }
 }
