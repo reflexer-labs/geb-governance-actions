@@ -14,12 +14,11 @@ abstract contract Setter {
 contract DeployGlobalSettlement {
 
     function execute(address currentEsm) public returns (address, address, address) {
-
-        // get old GlobalSettlement
+        // Get old GlobalSettlement
         ESM oldEsm = ESM(currentEsm);
         GlobalSettlement oldGlobalSettlement = GlobalSettlement(address(oldEsm.globalSettlement()));
 
-        // getting old GlobalSettlement vars
+        // Getting old GlobalSettlement vars
         address safeEngine = address(oldGlobalSettlement.safeEngine());
         address liquidationEngine = address(oldGlobalSettlement.liquidationEngine());
         address accountingEngine = address(oldGlobalSettlement.accountingEngine());
@@ -27,7 +26,7 @@ contract DeployGlobalSettlement {
         address coinSavingsAccount = address(oldGlobalSettlement.coinSavingsAccount());
         address stabilityFeeTreasury = address(oldGlobalSettlement.stabilityFeeTreasury());
 
-        // deploy new GlobalSettlement
+        // Deploy new GlobalSettlement
         GlobalSettlement globalSettlement = new GlobalSettlement();
 
         // Settings
@@ -44,6 +43,7 @@ contract DeployGlobalSettlement {
         Setter(liquidationEngine).addAuthorization(address(globalSettlement));
         Setter(accountingEngine).addAuthorization(address(globalSettlement));
         Setter(oracleRelayer).addAuthorization(address(globalSettlement));
+        
         if (coinSavingsAccount != address(0)) {
           Setter(coinSavingsAccount).addAuthorization(address(globalSettlement));
         }
@@ -63,7 +63,7 @@ contract DeployGlobalSettlement {
           Setter(stabilityFeeTreasury).removeAuthorization(address(oldGlobalSettlement));
         }
 
-        // deploying new threshold setter
+        // Deploying new threshold setter
         address thresholdSetter = address(new ESMThresholdSetter(
           address(oldEsm.protocolToken()),
           50000 ether, // minAmountToBurn
@@ -84,6 +84,7 @@ contract DeployGlobalSettlement {
 
         return (address(globalSettlement), esm, thresholdSetter);
     }
+    
 }
 
 abstract contract GlobalSettlementLike {
@@ -94,15 +95,14 @@ abstract contract GlobalSettlementLike {
     function stabilityFeeTreasury() public virtual returns (address);
 }
 
-// @notice Swaps auth of a pre deployed Global Settlement with the active one
+// @notice Swaps auth from an old GS to a new one
 contract SwapGlobalSettlement {
 
     function execute(address oldGlobalSettlement, address newGlobalSettlement) public {
-
-        // get old GlobalSettlement
+        // Get old GlobalSettlement
         GlobalSettlementLike oldContract = GlobalSettlementLike(oldGlobalSettlement);
 
-        // getting old GlobalSettlement vars
+        // Getting old GlobalSettlement vars
         address safeEngine = oldContract.safeEngine();
         address liquidationEngine = oldContract.liquidationEngine();
         address accountingEngine = oldContract.accountingEngine();
@@ -123,4 +123,5 @@ contract SwapGlobalSettlement {
         Setter(oracleRelayer).removeAuthorization(oldGlobalSettlement);
         Setter(stabilityFeeTreasury).removeAuthorization(address(oldGlobalSettlement));
     }
+    
 }
